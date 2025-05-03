@@ -1,0 +1,1972 @@
+---
+title: Female Labor Force Study
+---
+
+> r format(Sys.time(), \'%d %B, %Y\')
+>
+> The low and declining female labour force participation in India has
+> been under intense scrutiny by academicians and policy makers alike.
+> While there are several barriers to women's work - most notably the
+> burden of unpaid care work, lack of suitable job opportunities for
+> women, and structural transformation of the Indian economy - there are
+> also major flaws in the way 'work' is defined in the System of
+> National Accounts and the associated issues and challenges in
+> capturing women's work through labour force surveys. However, in the
+> recent past, the discourse on women's work has transcended beyond the
+> officially accepted definition of 'employment' to emphasise on the
+> need to include women's unrecognised and invisibilized unpaid labour
+> while defining women's 'work'. Despite this progress, traditional
+> labour force surveys remain outdated in their approach to capture
+> women's work. In this study we attempt to resolve some of these issues
+> in measurement by assessing how rates of female labor force
+> participation change when the data collection processes are enhanced
+> and modified. The study also explores barriers and enablers to women's
+> work.
+>
+> Finally, the study explores how male reporting of women's work can
+> influence estimates for female labour force participation. This
+> Work-in-Progress document presents the tabulations and preliminary
+> insights from the IWWAGE Female Labor Force Study (FLFS) Household
+> Survey.
+>
+> \`\`\`{r setup, include=FALSE}
+>
+> knitr::opts_chunk\$set( echo = FALSE, fig.align = "center", fig.height
+> = 3, fig.width = 5, message = FALSE, warning = FALSE, dpi = 300 )
+> options(kableExtra.auto_format = FALSE) \# Loading packages ----
+>
+> **check.packages function: install and load multiple R packages.**
+>
+> **Found this function here:
+> https://gist.github.com/smithdanielle/9913897 on 2019/06/17**
+>
+> **Check to see if packages are installed. Install them if they are
+> not, then load them into the R session.**
+>
+> check.packages \<- function(pkg) { new.pkg \<- pkg\[!(pkg %in%
+> installed.packages()\[, "Package"\])\] if (length(new.pkg)) {
+> install.packages(new.pkg, dependencies = TRUE) } sapply(pkg, require,
+> character.only = TRUE) }
+
+# Check if packages are installed and loaded:
+
+> packages \<- c("janitor","expss", "splitstackshape", "stringr",
+> "tidyverse","stringi","ggthemes",
+> "googlesheets4","googledrive","utils", "here",
+> "summarytools","knitr","kableExtra", "scales","ggpubr","stringr",
+> "tools", "sjlabelled","bookdown","flextable") check.packages(packages)
+
+# Theme update
+
+> theme_set(theme_bw()) theme_update(plot.margin = unit(c(1,1,1,1),
+> "cm"))
+
+# Setting Directories ----
+
+> **Sub-directories**
+>
+> rawdata \<- paste0(here::here(), "/data/raw/main_raw/") scripts \<-
+> paste0(here::here(), "/data/scripts/main_scripts/") cleandata \<-
+> paste0(here::here(), "/data/clean/main_clean/") figures \<-
+> paste0(here::here(),"/data/output/figures/")
+
+# Functions to plots different types of data ----
+
+> source(paste0(here(),"/data/scripts/","tab_plot_functions.R"))
+> #source(paste0(scripts, "tab_plot_functions.R"))
+
+# Shaurya's computer
+
+> if (Sys.info()\[\["user"\]\] == "Shaurya"){ \# Signing in to Shaurya's
+> mail id ---- #sheets_auth(email =
+> ["shaurya.srivastava02@gmail.com")](mailto:parushya.p@ifmr.ac.in)
+> drive_auth() gs4_auth(token = drive_token())
+>
+> \# Sheet to store tables addr_sheet =
+> "https://docs.google.com/spreadsheets/d/1Du86CfTMpgxVT-J_EB-
+> htyvwrCjsBuXGMmbLJKIjzsA/edit#gid=0" write_to_sheet \<-
+> function(tableframe, sheetname){ gs4_auth(token = drive_token())
+> write_sheet(tableframe,addr_sheet, sheet = sheetname) } } else {
+> write_to_sheet \<- function(tableframe, sheetname)
+>
+> { write.csv(tableframe,
+> paste0(here("/data/output/tables/"),sheetname,".csv"), row.names
+>
+> = FALSE) } }
+
+# Consistent Pallette
+
+> #cbp1 \<- c("steelblue", "#E69F00", "#56B4E9", "#009E73", \#
+> "#F0E442", "#D55E00", "#CC79A7") cbp1 \<-
+> c("#003f5c","#00c698","#58508d","#bc5090","#0069c0","#ff6361","#ffa600")
+> table_kable
+>
+> \<- function(tableframe, caption) {
+>
+> knitr::kable(tableframe, caption = caption, booktabs = TRUE) %\>%
+> kableExtra::kable_styling(font_size = 10,latex_options =
+> "hold_position", full_width = FALSE) %\>% row_spec(0, bold = T) %\>%
+> \# format last row column_spec(2, italic = T) }
+>
+> table_kable_2 \<- function(tableframe, caption) {
+>
+> knitr::kable(tableframe, caption = caption, booktabs = TRUE) %\>%
+> kableExtra::kable_styling(font_size = 10,latex_options =
+> "hold_position", full_width = FALSE) %\>% row_spec(0, bold = T) %\>%
+> \# format last row column_spec(2, italic = T) %\>
+>
+> \% row_spec(nrow(tableframe), bold = T) }
+
+# Loading datasets
+
+> load(here("data/clean/main_clean/SurveyCleanData.RData"))
+>
+> df_female_wob \<- df_female %\>% filter(!district_name == "Barmer")
+> df_male_wob \<- df_male %\>% filter(!district_name == "Barmer")
+
+\\newpage
+
+\# Introduction
+
+India has one of the lowest female labour force participation rates in
+the world\^\[ \[ McKinsey Global Institute: The Power of Parity-
+Advancing Women\'s Equality in Asia Pacific
+
+[\](https://www.mckinsey.com/\~/media/McKinsey/Featured%20Insights/Gender](http://www.mckinsey.com/~/media/McKinsey/Featured%20Insights/Gender)
+
+%20Equality/The%20power%20of%20parity%20Advancing%20womens%20equality
+
+%20in%20Asia%20Pacific/MGI-The-power-of-parity-Advancing-womens-
+equality-in-Asia-pacific-Full-report.pdf) \] with the contribution of
+women in the paid economy accounting for only 18 percent of India's
+gross domestic product. Moreover, merely a quarter of India's labour
+force is female. Women's decreasing engagement in paid work, especially
+since the last round of employment-unemployment surveys (EUS) in
+2011-12, has been one of the primary concerns for policymakers in India.
+According to the Periodic Labour Force Survey (PLFS) workers'
+participation rate has been on the downward trend for both men and women
+across rural and urban sectors; however, the decline is the sharpest in
+case of rural female workers. Between 2004-05 and 2018-19, rural female
+labour force participation declined drastically from 49.7 percent to
+26.4 percent. Urban female labour force participation saw a similar, but
+less steep decline of 4.2 percentage points, from 24.6 percent to 20.4
+percent in the same period.\^\[Source: Published reports of Employment
+Unemployment Survey (EUS) 2004-05 and PLFS 2018-19, NSSO, MoSPI, GOI.\]
+
+The rich literature on women's work in India explores several factors
+responsible for the low and declining labour force participation of
+women. These include education and skilling deficits, women's unpaid and
+care work, rise in household income and real wages (particularly in the
+rural sector), lack of household as well as public infrastructure,
+structural transformation of the economy, safety and mobility concerns
+and poor coverage and penetration of gender- responsive policies and
+programs. However, while exploring women's work participation, most
+studies revolve around supply-side factors; the demand-side is not
+explored as rigorously. There is a need to study the kinds of employment
+available to women, or lack thereof. The low work force participation
+rate of both young men and young women suggests a lack of job
+opportunities for educated young
+
+workers.\^\[ \[What Does the Periodic LabourForce Survey Tell Us?\]
+(https://thewire.in/labour/periodic-labour-force-survey-data-
+employment)\]
+
+Low female labour force participation of women in India can also be
+attributed to errors in measurement and classification of 'work' that
+women predominantly perform. Traditional methods and definitions
+employed by labour force surveys to measure women's work are
+unsuccessful in capturing their work due to the complexity involved in
+defining activities performed by women within the System of National
+Accounts. Commonly used definitions of 'work' and 'workforce' are
+employment-centric whereas most work that women perform is within
+households, and outside the realm of 'employment'. Another major
+challenge to measuring women's work is the errors in reporting of such
+work. Bias in reporting and informant bias lead to significant
+differences while reporting on women's work and time-use, when
+respondents are men as opposed to when respondents are women.
+
+There exists a huge gap in the definition and measurement of what
+employment surveys term as 'work'. Women tend to be invisibilized as
+workers since they remain engaged in unpaid household activities or as
+unpaid workers with their male counterparts and their participation in
+paid activities, thus, remains low. This invisibilization of female
+workers is common across all sectors from home-based work to
+agriculture, animal husbandry, trade, services and even beyond. This
+leads to the exclusion of women from the category of workers in official
+estimates. Whenever enumerators conduct surveys, women within families
+tend to be classified as 'unpaid family workers', which shows that their
+contribution to the household activities is usually overlooked or
+undervalued by the members of the family itself. In 2013, the
+International Conference of Labour Statisticians (ICLS) organised by the
+International Labour Organization (ILO) redefined work to include unpaid
+activities and care-work, for the purpose of statistical measurement.
+However, this inclusive definition has not yet permeated to the national
+level labour surveys of India and thus the data obtained from these
+surveys do not reflect the actual
+
+contribution of women's work to the Indian economy.
+
+Given this context, the IWWAGE Female Labour Force Survey attempts a
+more inclusive understanding of women's work, and the factors affecting
+women's economic participation. The study also aims to assess how rates
+of female labor force participation change when the data collection
+processes are enhanced and modified, through effective designing and
+implementation of survey instruments.
+
+\\newpage
+
+\# Concepts, Definitions, Interpretation and comparability of IWWAGE
+FLFS
+
+The concepts and definitions used in the IWWAGE FLFS may differ from
+other similar surveys. An important reason underlying these differences
+is our use of electoral rolls as a sampling frame. Many other surveys,
+including Periodic Labour Force Survey (PLFS) use the household listing
+for this purpose. In order to interpret the numbers thrown by our
+survey, it is important to understand various concepts that we employed
+during the planning, survey, and analysis stages. In this section we
+elaborate on various concepts, definitions, and interpretation of our
+survey results. In addition, we also note how we can make our survey
+comparable with some specific geography in the nationally representative
+PLFS.
+
+\*\*Use of Electoral Roll to construct FLFS sampling frame:\*\* A very
+important advantage of using electoral roll is that it uses much less
+resources (in terms of cost and time) in constructing the frame, as the
+electoral rolls are available from the Election Commission of India
+(ECI), and is regularly updated. However, there are a few limitations as
+well, which we note below:
+
+-   The electoral rolls are available at the assembly constituency (AC),
+    or parliamentary constituency, level. Sometimes, these
+    constituencies trespass the district boundaries rendering some
+    discrepancy in the district estimates.
+
+-   It is very difficult to achieve the rural and urban stratification,
+    as a particular AC may have both these areas. And there is no
+    identifier if a particular electoral booth covers rural or urban
+    areas.
+
+\*\*'Rural' and 'Urban' Districts and Selection of Assembly
+Constituencies:\*\* We choose two districts: one district to represent
+the rural part of the state, and one district to represent the urban
+
+part of the state for each of the five Indian states in our survey. With
+this distinction, a problem arises because, in general, districts are
+not wholly urban or rural but contain both rural as well as urban areas.
+To ensure that the district that we choose to represent the urban part
+of the state is representative of urban areas of the state, we divided
+all the districts in four quartiles on the basis of their urban
+population ratio, and chose the district with the highest population in
+the top quartile as our 'urban district'. Similarly, using the same
+quartile distribution, we chose the district with the highest population
+in the first quartile as our 'rural district'. The decision to take the
+districts with the highest population in the first and the last quartile
+was made so that we could ensure that we get an appropriate sample size
+within a district.
+
+Similar to what we noted in the case of districts, there is no
+identifier that defines a particular booth as rural or urban. To address
+this concern, we superimposed the assembly constituency (AC) maps over
+the district administrative map (based on Population Census 2011).
+Following this, we chose only those assembly constituencies which were
+located in fully rural or urban areas, depending on whether the district
+we had chosen earlier was chosen to represent the rural or urban part of
+the state.
+
+\*\*Work force Participation Rate (WPR) and Labour Force Participation
+Rate (LFPR):\*\* In our survey instrument we asked the female
+respondents if they are currently working for pay ('employed') or not.
+We also asked the currently unemployed females if they are actively
+seeking employment. We count those females who are actively not seeking
+employment as 'out of the labour force'. WPR is the proportion of
+females who are currently working as a proportion of total female
+population in the working age group (18-59 years). LFPR is the
+proportion of those females, who are either currently working or are
+actively seeking work, as the proportion of working age females.
+
+\*\*Application of weights to generate estimates at district level
+(Females):\*\* In order to give estimates for any population from the
+sampled data, we applied the necessary sampling weights. We present our
+estimates using these weights. We compute the weights for the young
+females (18 to 35 years) using the following formula:
+
+> \$\$
+
+MLT\_{YF,D} = \\frac{\\text {District Young Female}}{\\text {Sampled
+Young Females}}
+
+> \$\$
+
+Similarly, we compute the weights for the old females (36 to 60 years)
+at the district level. We take the district's young and old population
+using the 'single year figures' from the population census
+(2011).\^\[Population census (2011) Table C-13: 'Single year age returns
+by residence and sex'.\]
+
+We have also surveyed males, comprising about a fifth of the female
+sample. We compute the weight for Young Males using the following
+formula:
+
+> \$\$
+
+MLT\_{YF,booth} = \\frac{\\sum\_{booth}(MLT\_{YF,D})}{\\text {Number of
+Males Sampled in the booth }}
+
+> \$\$
+
+Similarly, we compute the weights for 'Older' males. It may be important
+to note here that it is not necessary that the young male counterpart
+for a young female is actually young. Firstly, the spouse, in general,
+is a few years older than the females surveyed. Secondly, in many cases,
+we were unable to interview the spouse and actually interviewed some
+other adult member in the same household, irrespective of whether they
+were old or young.
+
+\*\*District Level Estimates:\*\* We get the estimates at the district
+level by applying the weights, as computed using the formula given in
+previous paragraphs. As explained earlier, we had designated districts
+as 'rural' or 'urban'. In the 'rural district', we surveyed only the
+assembly constituencies falling in the rural area. Similarly, for the
+'urban district'. These ensure that the stratification of 'rural' and
+'urban' is maintained when we move from the district to the assembly
+constituency and that our weights are representative of rural and urban
+parts of the districts that we surveyed.
+
+\*\*State Level Estimates for WPR and FLPR:\*\* We present the estimates
+only at the level of districts, and that too only for the rural part of
+district (in case of the rural district) and urban part of the district
+(in case of the urban district). We plan to extrapolate these figures to
+get state level estimates using some appropriate approximation, making
+use of the estimates for districts surveyed in our sample along with
+state estimates of workforce participation from previously held PLFS. At
+present, we are not presenting these state level estimates as this is a
+work in progress.
+
+\*\*Comparison with PLFS estimates:\*\* It is tempting to compare our
+estimates with the PLFS estimates. The numbers may NOT be strictly
+comparable in general on account of differences in sampling frame.
+However, with some caveats, the following comparison may be considered:
+
+-   The IWWAGE FLFS estimates of a 'rural district' (3 in number) may be
+    compared with a district's rural estimate from the PLFS.
+
+-   Similarly, the IWWAGE FLFS estimates of an 'urban district' (6 in
+    number) may be compared with a district's urban estimate from the
+    PLFS.\^\[It may be noted that one of the districts we surveyed -
+    Central
+
+Delhi- is generally not surveyed by the PLFS; hence we are unable to
+present a PLFS figure in comparison to the estimate from our own study\]
+
+\\newpage
+
+\# Research Methodology
+
+This section details the sampling design and estimation procedure for
+the survey.
+
+\*\*Main objectives of the survey:\*\* There are three main objective of
+this survey:
+
+1.  To understand the barriers and enablers to female labour force
+    participation.
+
+2.  To gain insights about the time-use of females.
+
+3.  To gauge the discrepancy between the female works as self- reported
+    by them and as reported by the spouse of the female member (or other
+    male member if spouse was not available).
+
+\*\*Geographical coverage:\*\* We cover five Indian states: Delhi,
+Jharkhand, Karnataka, Madhya Pradesh, and Rajasthan. In each of these
+five states, we choose one rural and one urban district. Our target
+sample size was about 6000 (5000 females & 1000 males), equally divided
+among the five states. For the purpose of this report, we only share the
+findings of 9 out of the 10 districts that we surveyed.
+
+\*\*Period of Survey:\*\* We conducted the survey over a two month
+period, between November 2021 and January 2022.
+
+\*\*Survey instrument:\*\* We have designed two sets of survey
+instruments (schedules) for the purpose of this study:
+
+-   \*\*Instrument 1:\*\* This is our mail survey schedule, designed for
+    the female respondent. It comprehensively covers the household
+    information as well as personal level questions for the female
+    respondent, including employment and time-use questions. These
+    questions are divided into specific blocks.
+
+-   \*\*Instrument 2:\*\* This is a shortened version of the main survey
+    schedule, to record the responses of the spouse (of the female
+    surveyed) or other male member of the household where the female is
+    surveyed.
+
+\*\*Use of Electoral Rolls to construct the sampling frame:\*\* To
+develop a representative sample of female population, we used an
+innovative strategy. We digitized the recent electoral rolls published
+by election commissions of the respective states. For digitization we
+randomly selected polling booths (to maintain spatial randomization)
+
+in the selected assembly constituencies of the sampled districts. We
+then extracted females in the age group of 18 to 60 and constructed a
+sampling frame from which we randomly selected respondents to be
+interviewed.
+
+\## Sampling Design
+
+We adopt multi-stage stratified random sampling design for the purpose
+of this survey.\^\[ It may be instructive to outline the differences
+with the various socio-economic surveys, including the Periodic Labour
+Force Survey (PLFS) conducted by the National Sample Survey Organisation
+(NSS), the gold standard of scientific sample surveys in India. Similar
+to the NSS we also adopt the multi-stage stratified random sampling
+method. There are three important distinctions however. The first is
+regarding the sampling frame. The NSS uses ALL the Indian households in
+villages (rural) and enumeration blocks (urban) for its listing. It then
+randomly chooses villages & blocks (to get the First Stage Units) and
+then randomly selects households\]. We undertake a survey of
+approximately 5000 females (and 1000 males) across five Indian states
+(Delhi, Jharkhand, Karnataka, Madhya Pradesh, and Rajasthan). We divide
+this sample size equally among the five states: 1000 females (and 200
+males). We then choose two districts- one rural and one urban- in each
+of these five chosen states. We choose the rural district to be the one
+which has a substantially higher rural population. The urban district
+has a substantially urban population.
+
+Having decided on the ten districts (2 in each of the five states), we
+choose two assembly constituencies in each of these ten chosen
+districts. Of these selected constituencies, we randomly choose six
+polling booths in each of these twenty (5\*2\*2) constituencies. For
+each of the randomly selected booths, we acquire the electoral rolls for
+constructing the sampling frame of this survey.
+
+We then digitized the electoral rolls ONLY for these selected booths. We
+make a list of ALL the females (\<60 yrs) from this booth level
+electoral roll. This serves as the sampling frame for us. We now divide
+the sampling frame into younger (18 to 35 yrs) and older (36 to 60 yrs).
+Having stratified in such a way, we randomly select the name of the
+female from the separated electoral roll. The randomly selected female,
+thus, is the unit of the survey. Further, we randomly select roughly a
+fifth of this, and undertake the survey for the spouse response, or
+other male members if the spouse is unavailable.
+
+In what follows, we give the levels of stratification (three), stages of
+randomization (two) and strategy we adopt for allocation of samples
+across various dis-aggregation units.
+
+\### Levels of Stratification
+
+\*\*Choice of states\*\*
+
+We plot major Indian states. On the horizontal axis we have the Female
+Labour Force Participation Rate (FLFPR) from the PLFS (2017-18). On the
+vertical axis, we take the change in the female participation between
+2011-12 (EUS) and 2017-18 (PLFS). We now partitioned the states into
+four categories. These are:
+
+1.  High level of FLFPR & low decline (quadrant-1: from which we choose
+    Madhya Pradesh),
+
+2.  Low level of FLFPR & low decline (quadrant-2: from which we choose
+    Delhi),
+
+3.  Low level of FLFPR & high decline (quadrant-3: from which we choose
+    Jharkhand), and
+
+4.  High level of FLFPR & high decline (quadrant-4: from which we choose
+    Rajasthan).
+
+Finally, we also choose one state, Karnataka, which has FLFPR levels and
+changes very close to the national average.
+
+We need to emphasize here that one state from each of the four quadrants
+with different growth trajectories of female labour force participation
+has been selected. This has been done to ensure a regionally
+representative sample and a better understanding of the barriers
+experienced by women across India. While iterating through the
+quadrants, the attempt has been to maintain geographical representation
+from each of the North, South, East, West, and Central Zones of
+India.\^\[Also, due to the paucity of time, and changing restrictions
+and conditions due to COVID-19, we selected states which do not have
+much travel restrictions.\]
+
+\*\*Rural and Urban\*\*
+
+For each of these five states, we choose one rural and one urban
+district. We calculate the urban ratio (proportion of urban to total
+population) for all the districts in each of the states and divide them
+into quartiles based on this ratio. The districts in the fourth quartile
+and urban ratio greater than 0.5 are treated as 'urban' districts and
+the ones in the fourth quartile and with urban ratio below 0.5 are
+treated as 'rural' districts. From each of these two strata, we further
+select the district with the highest population.\^\[ This would ensure
+that we get appropriate sample size coverage within a district.\] After
+selecting two districts in each state - one rural and one urban - we
+further take steps to increase the likelihood of listing rural and urban
+households respectively in them. To do this, we manually juxtapose the
+administrative map of districts obtained from census 2011 handbooks upon
+a map of assembly
+
+constituencies within the district. This allows us to identify assembly
+constituencies with higher concentrations of either villages for rural
+districts and urban centers for urban districts. Upon this selection,
+sample size assigned to the district is equally split between the two
+constituencies.
+
+\*\*Young and Older Females\*\*
+
+We take all the females in the randomly selected booth and divide them
+into young (18-35 yrs) and old (35-60 yrs) females.
+
+\### Stages of Randomization
+
+\*\*Booth selection in an assembly constituency\*\*
+
+For the chosen assembly constituency, we randomly choose six polling
+booths. The sample frame for this first stage unit (FSU) is all the
+booths in the assembly constituency. Electoral rolls are publicly
+available and sampling through them has been found to be relatively more
+representative than other methods.\^\[Joshi, R. et al, 2020. Are voter
+rolls suitable sampling frames for household surveys? Evidence from
+India. IDinsight Working Paper. Available at:
+[https://www.idinsight.org/publication/are-voter-rolls-suitable-](http://www.idinsight.org/publication/are-voter-rolls-suitable-)
+sampling-frames-for-household-surveys-evidence-from-india/\] These avoid
+the time and cost associated with household listing and mitigate the
+risk of bias inherent in quasi-random methods (Lemeshow and Robinson,
+1985; Shannon et al, 2012). Using electoral rolls entails few
+limitations. Firstly, many states' election commissions publish
+electoral rolls in their local language. Manually digitizing them would
+incur costs and data would be prone to errors. Robust monitoring and
+quality checks can control this challenge. Using the electoral rolls for
+each polling station randomly selected, we conduct a listing of all the
+households with females in the age-group 18+. We digitise the electoral
+rolls of select polling stations. This would enable us to oversample
+groups which other studies have shown to be underrepresented in
+electoral rolls or those which have lower response rate.
+
+A randomised selection from the population of households with female
+members would be allocated to surveyors. Approaching the households in
+this list would be called a random walk. In case, on one complete random
+walk in a polling station the requisite sample is not covered, the next
+polling station in randomly sampled from the constituency would be used.
+
+\*\*Respondent selection from the electoral roll in the randomly
+selected booth\*\*
+
+Having undertaken our third stratification (Young & Old females), we
+
+randomly select the females depending on the allocated sample. These
+females are the unit of our survey. The sample of female respondents has
+been collated through the electoral rolls at polling booth level instead
+of household listing. Electoral rolls have been used extensively in the
+past years as an alternative to household listing and methods like
+"right hand rule" or "spin the pen" (Banerjee et al, 2014; Khera, 2018)
+are now common. Most of the national surveys involve male participants
+responding to questions addressed for females. This distorts the
+estimates of female time-use and labour.
+
+Significant differences have been observed when women self-report and
+when men fill in for women.
+
+To account for the informant bias, the survey has been conducted for a
+fraction (20 percent) of male respondents across the five states - 200
+men in each state. The male respondents are asked to report about the
+female respondents. This allows us to ascertain the extent of bias
+involved when male respondents report for females. In a fraction of
+households (one in five) where the female is surveyed, a male member is
+also surveyed. As discussed previously, the questionnaire for this
+survey is a subset of female survey tools. It primarily includes modules
+for reporting women's time use and labor force participation. As a set
+protocol, the male participant is either the spouse of the female
+surveyed, the head of the household or the eldest adult male member in
+the household.
+
+\### Allocation of Sample Size\^\[Within these randomly chosen villages
+& blocks (to get the Ultimate Stage Units or unit of the survey). We use
+the electoral rolls for the chosen booth in an assembly constituency in
+a district. Secondly, NSS surveys ALL Indian districts in ALL Indian
+states. We chose only two districts in five states. Finally, the unit of
+survey in NSS (PLFS) is the households. Our unit of survey is an
+individual (female)\]
+
+-   We have a total sample size of 5000 female (and 1000 male
+    respondents).
+
+-   We divide this into five equal parts for each of the five
+    states.There are two districts (one urban and one rural) in each of
+    these states.
+
+-   We divide the sample in the ratio 3:2, in favour of the urban
+    district. This accounts for the higher heterogeneity in the urban
+    areas. Thus, we have 600 samples for urban districts and 400 for
+    rural districts.
+
+-   We allocate an equal sample for both the constituencies in a given
+    district (Urban-300, Rural- 200).
+
+-   In each of the six randomly selected booths in an assembly
+    constituency, we assign the sample in the ratio 2:1 in favour of the
+    young females. This we do, to account for under- reported females in
+    the electoral roll data. In each of the six Urban booths, we have 50
+    females sampled (33 young + 17 old). In each of the six Rural
+    booths, we have 33 females sampled (22 young + 11 old).
+
+\## Limitations of the Sampling Strategy
+
+1.  Absolute comparability with other nationally representative surveys
+    will be impossible to achieve, since we do not have rural and urban
+    sampling frames in the manner in which NSS does. Hence, at best, we
+    can compare the district level rural and urban estimates of FLFPR
+    with the corresponding rural and urban estimates given by the PLFS.
+
+2.  There might still remain a selection bias due to the process of
+    listing households through electoral rolls.
+
+3.  While we can provide state figures for FLFPR statistics at a later
+    stage (combining rural and urban sector together) this would only be
+    an approximation and will not be very representative; upon
+    consultation with experts, we foresee that such figures will not
+    have absolute comparability with the PLFS figures.
+
+\\begin{table}\[\]
+
+\\caption{States, Districts, and Assembly constituencies for the FLFS
+survey}
+
+\\label{tab:my-table}
+
+\\resizebox{\\textwidth}{!}{%
+
+\\begin{tabular}{\|l\|c\|c\|}
+
+\\hline
+
+\\textbf{State (5)} & \\textbf{District (5\*2)} & \\ textbf{Assembly
+Constituency (5\*2\*2)} \\\\ \\hline
+
+\\multirow{4}{\*}{Delhi} & \\multirow{2}{\*}{Central (U)} & Karol Bagh
+\\\\ \\cline{3-3}
+
+> & &
+
+Sadar Bazar \\\\ \\cline{2-3}
+
+> & \\multirow{2}{\*}{South West (U)} &
+
+Bijwasan \\\\ \\cline{3-3}
+
+> & &
+
+Matiala \\\\ \\hline
+
+\\multirow{4}{\*}{Jharkhand} & \\multirow{2}{\*}{Gharwa (R)} & Gharwa
+\\\\ \\cline{3-3}
+
+> & &
+
+Bhawanathpur \\\\ \\cline{2-3}
+
+> & \\multirow{2}{\*}{Dhanbad (U)} &
+
+Baghmara \\\\ \\cline{3-3}
+
++--------------------------------+---+--------------------------------+---+
+|                                | & |                                | > |
+|                                |   |                                |   |
+|                                |   |                                | & |
++================================+===+================================+===+
+| > Dhanbad                      |   | > \\\\ \\hline                 |   |
++--------------------------------+---+--------------------------------+---+
+| > \\multirow{4}{\*}{Madhya     | & | > \\multirow{2}{\*}{Rewa (R)}  | > |
+| > Pradesh}                     |   |                                |   |
+|                                |   |                                | & |
++--------------------------------+---+--------------------------------+---+
+| > Teonthar                     |   | > \\\\ \\cline{3-3}            |   |
++--------------------------------+---+--------------------------------+---+
+|                                | & |                                | > |
+|                                |   |                                |   |
+|                                |   |                                | & |
++--------------------------------+---+--------------------------------+---+
+| > Gurh                         |   | > \\\\ \\cline{2-3}            |   |
++--------------------------------+---+--------------------------------+---+
+|                                | & | > \\multirow{2}{\*}{Indore     | > |
+|                                |   | > (U)}                         |   |
+|                                |   |                                | & |
++--------------------------------+---+--------------------------------+---+
+| > Rau                          |   | > \\\\ \\cline{3-3}            |   |
++--------------------------------+---+--------------------------------+---+
+|                                | & |                                | > |
+|                                |   |                                |   |
+|                                |   |                                | & |
++--------------------------------+---+--------------------------------+---+
+| > Dr. Ambedkar Nagar           |   | > \\\\ \\hline                 |   |
++--------------------------------+---+--------------------------------+---+
+| > \\multirow{4}{\*}{Karnataka} | & | > \\multirow{2}{\*}{Mandya     | > |
+|                                |   | > (R)}                         |   |
+|                                |   |                                | & |
++--------------------------------+---+--------------------------------+---+
+| > Mandya                       |   | > \\\\ \\cline{3-3}            |   |
++--------------------------------+---+--------------------------------+---+
+|                                | & |                                | > |
+|                                |   |                                |   |
+|                                |   |                                | & |
++--------------------------------+---+--------------------------------+---+
+| > Maddur                       |   | > \\\\ \\cline{2-3}            |   |
++--------------------------------+---+--------------------------------+---+
+|                                | & | > \\multirow{2}{\*}{Bangalore  | > |
+|                                |   | > (U)}                         |   |
+|                                |   |                                | & |
++--------------------------------+---+--------------------------------+---+
+| > Bangalore S.                 |   | > \\\\ \\cline{3-3}            |   |
++--------------------------------+---+--------------------------------+---+
+|                                | & |                                | > |
+|                                |   |                                |   |
+|                                |   |                                | & |
++--------------------------------+---+--------------------------------+---+
+| > Yeshwantpur                  |   | > \\\\ \\hline                 |   |
++--------------------------------+---+--------------------------------+---+
+| > \\multirow{4}{\*}{Rajasthan} | & | > \\multirow{2}{\*}{Barmer     | > |
+|                                |   | > (R)}                         |   |
+|                                |   |                                | & |
++--------------------------------+---+--------------------------------+---+
+| > Siwana                       |   | > \\\\ \\cline{3-3}            |   |
++--------------------------------+---+--------------------------------+---+
+|                                | & |                                | > |
+|                                |   |                                |   |
+|                                |   |                                | & |
++--------------------------------+---+--------------------------------+---+
+| > Chohtan                      |   | > \\\\ \\cline{2-3}            |   |
++--------------------------------+---+--------------------------------+---+
+|                                | & | > \\multirow{2}{\*}{Jaipur     | > |
+|                                |   | > (U)}                         |   |
+|                                |   |                                | & |
++--------------------------------+---+--------------------------------+---+
+| > Hawa Mahal                   |   | > \\\\ \\cline{3-3}            |   |
++--------------------------------+---+--------------------------------+---+
+|                                | & |                                | > |
+|                                |   |                                |   |
+|                                |   |                                | & |
++--------------------------------+---+--------------------------------+---+
+| > Vidyadhar Nagar              |   | > \\\\ \\hline                 |   |
++--------------------------------+---+--------------------------------+---+
+| > \\end{tabular}%              |   |                                |   |
++--------------------------------+---+--------------------------------+---+
+| > }                            |   |                                |   |
++--------------------------------+---+--------------------------------+---+
+| > \\end{table}                 |   |                                |   |
++--------------------------------+---+--------------------------------+---+
+
+\\newpage
+
+\# Survey Summary
+
+\`\`\`{r}
+
+#State-wise interviews
+
+stat_state_f \<- tabOneVar(df_female_wob, \"state\") %\>% rename(
+
+> \"State\" = \"state\",
+>
+> \"No. of Female Respondents\" = \"n\", \"Percentage of Females\" =
+> \"Percent\"
+>
+> )
+
+stat_state_m \<- tabOneVar(df_male_wob, \"state\") %\>% rename(
+
+> \"State\" = \"state\",
+>
+> \"No. of Male Respondents\" = \"n\", \"Percentage of Males\" =
+> \"Percent\"
+>
+> )
+
+stat_state \<- left_join(stat_state_f, stat_state_m, by = \"State\")
+%\>% bind_rows(
+
+> summarise_all(., \~if(is.numeric(.)) round(sum(.),0) else \"Total\")
+>
+> )
+
+table_kable_2(stat_state, caption = \"State-Wise Sample\") %\>%
+kable_styling(latex_options=\"scale_down\")
+
+> \`\`\`{r district-sample} stat_district_f \<- tabOneVar(df_female_wob,
+> "district_name") %\>% rename( "District" = "district_name", "No. of
+> Female Respondents" = "n", "Percentage of Females" = "Percent" )
+>
+> stat_district_m \<- tabOneVar(df_male_wob, "district_name") %\>%
+> rename( "District" = "district_name", "No. of Male Respondents" = "n",
+> "Percentage of Males" = "Percent" )
+>
+> stat_district \<- left_join(stat_district_f, stat_district_m, by =
+> "District") %\>% bind_rows( summarise_all(., \~if(is.numeric(.))
+> round(sum(.),0) else "Total") )
+>
+> table_kable_2(stat_district, caption = "District-Wise Sample") %\>%
+> kable_styling(latex_options="scale_down")
+
+\`\`\`{r sector}
+
+#Sector-wise Interviews
+
+stat_area_f \<- tabOneVar(df_female_wob, \"area_actual\") %\>% rename(
+
+> \"Sector\" = \"area_actual\",
+>
+> \"No. of Female Respondents\" = \"n\", \"Percentage of Females\" =
+> \"Percent\"
+>
+> )
+
+stat_area_m \<- tabOneVar(df_male_wob, \"area_actual\") %\>% rename(
+
+> \"Sector\" = \"area_actual\",
+>
+> \"No. of Male Respondents\" = \"n\", \"Percentage of Males\" =
+> \"Percent\"
+>
+> )
+
+stat_area \<- left_join(stat_area_f, stat_area_m, by = \"Sector\") %\>%
+
+> bind_rows(
+>
+> summarise_all(., \~if(is.numeric(.)) round(sum(.),0) else \"Total\")
+>
+> )
+
+table_kable_2(stat_area , caption = \"Sector-Wise Sample\") %\>%
+kable_styling(latex_options=\"scale_down\")
+
+> We surveyed approximately 200 men (one fifth of the females surveyed)
+> from each of the five selected states. Rajasthan has fewer respondents
+> in the table given above as only the district of Jaipur is being
+> included for the purpose of analysis in this report.[^2^](#_bookmark3)
+>
+> As mentioned earlier, we surveyed two districts in each state. One
+> district corresponds to the urban sector while the other corresponds
+> to the rural sector in the respective state, with the exception of
+> Delhi, where both districts are urban.
+>
+> Of the approximately 1000 women sampled in each state, around 600
+> respondents are taken from urban areas and the remaining 400 from
+> rural areas, as visible from the figure above.
+>
+> Based on the data collected from the nine districts mentioned above,
+> 72 percent of our surveyed population is urban while approximately 28
+> percent is rural.
+
+# What does our sample look like?
+
+> The following section gives a brief snapshot of the demographic
+> distribution of our sample and the population it represents on key
+> demographic characteristics of social category, age, education,
+> religion and wealth.
+
+## Social Category
+
+> \`\`\`{r sample-picture}
+>
+> tab_soc_cat \<- df_female_wob %\>% mutate( social_category =
+> as.character(social_category), social_category =
+> case_when(social_category %in% c("Do Not Know", "Refused to Answer")
+> \~ "Others", TRUE\~social_category), social_category =
+> factor(social_category, levels =
+> c("General","OBC","SC","ST","Others")) ) %\>% tab_cross(.,
+> "area_actual","social_category") %\>% rename( "Sector" =
+> "area_actual", "Social Category" = "social_category" )
+>
+> write_to_sheet(tableframe = tab_soc_cat, "Social Category v Sector")
+> plotTwoVar(tab_soc_cat, "Social Category","Sector") + labs(title =
+> "Social Category Distribution", x ="")
+
+The figure shows the distribution of our sample across various social
+categories. In both the rural and urban sectors, the proportion of women
+belonging to the OBC category is the highest, followed by those
+
+> [^2^](\l) We have not included the data for the district of Barmer in
+> Rajasthan as we are still in the process of reviewing the data quality
+> of this district.
+
+belonging to the General category, Scheduled Castes and lastly the
+Scheduled Tribes. The \'Others\' category represents the remaining women
+in the sample who were either unaware of their social category or
+refused to answer.
+
+\## Religion
+
+\`\`\`{r sample-religion} tab_religion \<- df_female_wob %\>%
+
+> mutate(
+>
+> religion = as.character(religion),
+>
+> religion = case_when(religion %in% c(\"Hindu\",\"Muslim\") \~
+> religion,
+>
+> TRUE\~\"Others\"), social_category = factor(social_category, levels =
+
+c(\"Hindu\",\"Muslim\", \"Others\"))
+
+> ) %\>%
+>
+> tab_cross(., \"area_actual\",\"religion\") %\>% rename(
+>
+> \"Sector\" = \"area_actual\", \"Religion\" = \"religion\"
+>
+> )
+
+write_to_sheet(tableframe = tab_religion, \"Religion v Sector\")
+plotTwoVar(tab_religion, \"Religion\",\"Sector\") + labs(title =
+\"Religion Distribution\", x =\"\")
+
+> Hindus are predominant in the districts surveyed by us, in both rural
+> and urban areas. 96.2 percent of rural women are Hindus while 3.3
+> percent are Muslims in the survey. In the urban sector, 89.2 percent
+> women belonged to the Hindu community and 9.2 percent were Muslims.
+> Muslim women are clearly the religious minority in the areas surveyed
+> for our study. There are even fewer people from other religious
+> backgrounds (Buddhist, Sikh, Jain and Christian) as is evident from
+> the figure above.
+
+## Age
+
+> \`\`\`{r age, fig.align = "center",fig.height = 4,fig.width = 6}
+> tab_age \<- tab_cross(df_female_wob, "area_actual","age_actual")
+> write_to_sheet(tab_age, "Age v sector") ggplot(tab_age, aes(x =
+> age_actual, y = Percent, fill = area_actual)) + geom_histogram(stat =
+> "identity") + labs( title
+>
+> = "Age Distribution", x = "", fill ="Sector") +
+> facet_wrap(\~area_actual) +
+>
+> theme( legend.position = "bottom", strip.background = element_blank(),
+> strip.text.x = element_blank()) + scale_fill_manual(values = (cbp1)) +
+> theme( legend.position = "bottom", strip.background =
+> element_rect(colour="white"), panel.border = element_blank())
+>
+> tab_age_bucket \<- df_female_wob %\>% tab_cross(., "area_actual","Age
+> Group") %\>% rename( "Sector" = "area_actual" ) %\>% select(-n)
+>
+> write_to_sheet(tab_age_bucket, "Age Group v Sector")
+> table_kable(tableframe = tab_age_bucket,caption = "Age Group v
+> Sector")
+
+The graphs above show that the majority of the women surveyed fall in
+the 18-35 age cohort - nearly 60 percent in both rural and urban areas.
+
+\## Education
+
+\`\`\`{r education}
+
+tab_ed \<- df_female_wob %\>% tab_cross(.,\"area_actual\",
+\"Education\") %\>% rename(
+
+> \"Sector\" = \"area_actual\"
+>
+> ) %\>% select(-n)
+
+write_to_sheet(tab_ed, \"Education v Sector\") table_kable(tableframe =
+tab_ed,caption = \"Ed v Sector\")
+
+> The women surveyed by us across the 9 districts have varying levels of
+> educational attainment, which we have broadly classified in the
+> categories given in the table above. Note that each category is
+> exclusive, i.e., those who lie in the category 'Secondary' had
+> education levels ranging from above primary level (class 5) till those
+> who had received education till Class 10. The majority of the women
+> surveyed for both rural and urban regions had received secondary
+> education - 36 percent in rural areas and 38 percent in urban areas.
+> There is a stark difference in the proportion of the female population
+> with postgraduate degrees and above between rural and urban areas, as
+> expected. Table 2.2 shows that only 2.5 percent of women in rural
+> districts had received post graduate degrees or above, while 8.2
+> percent of women in urban districts had similar educational attainment
+> levels.
+
+## Wealth
+
+> The wealth has been calculated on the basis of the asset index. The
+> graph shows that the distribution is right skewed and the majority of
+> the population has a normalized asset index between 0.00 and 0.25 in
+> both rural and urban areas.
+>
+> We have calculated the asset index of an individual using the method
+> of inverse mean weights. This method allows us to give a higher weight
+> to a relatively scarce asset (for example washing machine in rural
+> areas) and a lower weight to an asset which is relatively abundant
+> (for instance fan in urban areas).
+>
+> Let *i* denote a particular woman in the sample.
+>
+> *i* ∈{1 *,* 2 *,...,n* }
+>
+> where, *n* is the sample size.
+>
+> Let *j* denote a particular asset, and *k* denote the number of
+> assets.
+>
+> *j* ∈{1 *,*2 *,..., k* }
+>
+> where, *k* = 17 in rural sector and *k* = 14 in urban
+> sector.[^3^](#_bookmark6)
+>
+> So, *Y i , j* = Possession ( *Yes/No* ) of *j^th^* asset by *i^th^*
+> female. *Y i , j* ∈{0 *,*1 } where *0* means no possession of
+> particular asset.
+>
+> For example: if the *1^st^* woman interviewed does not have the
+> *2^nd^* asset in the list, *Electric Cooler* then *Y* 1 *,*2 = 0.
+>
+> Let *W j* denote the weight of the *j^th^* asset.[^4^](#_bookmark7)
+>
+> *n*
+>
+> ∑ *Y i , j*
+>
+> *W* =1 *−* *[^i^]{.underline}*
+>
+> *j n*
+>
+> So, the asset index for *i^th^* female becomes,
+
+*k*
+
+*A I* =∑ *Y*
+
+*n*
+
+> ∑ *Y i , j*
+
+1 *− [i]{.underline}*[=1]{.underline}
+
+> *i*
+>
+> *j*=1
+>
+> *i , j n*
+>
+> The Asset Index, *AI* so calculated for *i^th^* female, gives a proxy
+> for wealth of the household she belongs to. The asset index is further
+> normalized to generate *N A Ii* ∈\[0 *,* 1). This normalization is
+> done as follows:
+>
+> *N A I* = *A Ii − A I mi n*
+>
+> *i A Imax − A Imin*
+>
+> \`\`\`{r asset-index, fig.height= 6, fig.width=7} df_female_wob \<-
+> df_female_wob %\>% group_by(area_actual) %\>% mutate( asset_index_norm
+> = round( (asset_index -
+> min(asset_index))/(max(asset_index)-min(asset_index)), 2) )
+>
+> [^3^](\l) In rural sector, *j* represents one of the asset from the
+> asset bucket comprising of Electric Fan, Electric Cooler,Air
+> Conditioner,Computer,Mobile phone without Internet, Mobile phone with
+> Internet, Bicycle, Scooter, Car, Television, Refrigerator, Washing
+> Machine, Three Wheeler, Cart, Tempo, Tractor and Thresher. In urban
+> *j* represents one of the asset from the asset bucket comprising of
+> Electric Fan, Electric Cooler,Air Conditioner,Computer,Mobile phone
+> without Internet, Microwave, Mobile phone with Internet, Bicycle,
+> Scooter, Car, Television, Refrigerator, Washing Machine, and Three
+> Wheeler.
+>
+> [^4^](\l) Please note that weight of the asset and corresponding asset
+> indices are created separately for rural and urban sectors as the
+> number of assets in the respective sector buckets and sample size in
+> each subset is different. The intuition to do this comes from the fact
+> that ownership of the same asset would mean different things towards
+> the wealth of the households in urban and rural areas. For example,
+> possession of a tractor in rural areas might contribute differently
+> towards understanding of wealth of household for urban areas than it
+> does in rural areas. So, asset index for urban areas does not include
+> weight for tractor. Please see the previous note to find differences
+> in asset buckets used for this calculation in rural and urban sectors.
+>
+> ggplot(df_female_wob, aes(x = asset_index_norm, fill = area_actual,
+> weight = comp_wt)) + geom_density(color = NA) + labs( x = "", y
+> ="Density", fill = "Sector", title = "Distribution of Normlized Asset
+> Index") + facet_wrap(\~area_actual, nrow = 2 ) +
+>
+> scale_fill_manual(values = (cbp1)) + theme( strip.background =
+> element_rect(colour="white"), panel.border = element_blank()) + theme(
+> legend.position = "bottom", axis.text = element_text(size = 7),
+> axis.title = element_text(size = 8), plot.subtitle
+>
+> = element_text(size = 7), legend.title = element_text(size = 7),
+> legend.text = element_text(size = 6))
+
+From the graph above, we see that both the rural and urban distribution
+for wealth is right skewed, showing that a fewer proportion of women in
+both rural and urban areas are wealthy and own a large number of assets.
+
+\\newpage
+
+\# What do we learn about women\'s participation in workforce?
+
+\`\`\`{r}
+
+tab_flp \<- df_female_wob %\>% group_by(state,area_actual,district_name)
+%\>% summarise(
+
+\`In Workforce(Percentage)\` = round( sum( comp_wt\[work_for_pay ==
+\"Yes; working currently\"\]) \* 100/sum(comp_wt),1),
+
+\`Dropped out(Percentage)\` = round( sum( comp_wt\[work_for_pay == \"No;
+used to work previously\"\]) \* 100/sum(comp_wt),1),
+
+\`Never Worked(Percentage)\` = round( sum( comp_wt\[work_for_pay ==
+\"No; never worked\"\]) \* 100/sum(comp_wt),1),
+
+> ) %\>%
+>
+> rename( \"State\" = \"state\",
+>
+> \"Sector\" = \"area_actual\", \"District\" = \"district_name\")
+
+table_kable(tab_flp, \"District-Wise Women\'s Workforce Participation\")
+
+> %\>%
+
+kable_styling(latex_options=\"scale_down\") write_to_sheet(tab_flp,
+\"District Wise Women\'s Workforce Participation\")
+
+> The table above gives the district-wise break up of workforce
+> participation rates of women that we surveyed. The proportion of women
+> who have dropped out of the workforce is the highest in the case of
+> urban Bangalore followed by urban Indore. The variation in the
+> proportion of population engaged in the paid work is quite wide
+> between Central and South West Delhi, despite both districts being
+> urban.
+>
+> Karnataka leads in workforce participation, in both rural and urban
+> areas. The proportion of the population that had never worked is the
+> highest in Jharkhand (both rural and urban); which is a cause for
+> concern. In the rural sector, Garhwa has the poorest workforce
+> participation at 12.8 percent and Mandya has the highest workforce
+> participation at 33 percent.
+
+## Nature of Employment Sector
+
+> \`\`\`{r nature-of-job, fig.height = 4,fig.width = 7} tab_nature_job
+> \<- df_female_wob %\>% filter(work_for_pay == "Yes; working
+> currently") %\>% tab_cross(.,"area_actual", "nature_job_work") %\>%
+> filter( nature_job_work != "MGNREGS") %\>%
+>
+> mutate( nature_job_work = as.character(nature_job_work),
+> nature_job_work = toTitleCase(case_when(nature_job_work == "Others
+> Specify" \~ "Others", nature_job_work
+>
+> == "Govt./ PSU" \~ "Government/PSU", TRUE\~nature_job_work)),
+> nature_job_work = factor(nature_job_work, levels = c("Farming/
+> Agriculture Related","Self-Employed","Private Employer","Private
+> Firm","Government/PSU","Other Government Program","Others")) )
+>
+> %\>% rename( "Sector" = "area_actual", "Nature of Employment Sector" =
+> "nature_job_work")
+>
+> plotTwoVar(tab_nature_job, "Nature of Employment Sector", "Sector") +
+> labs( title = "Workforce: Nature of Employment Sector", x ="") +
+> theme(axis.text = element_text(size = 7), axis.title =
+> element_text(size = 7), plot.title = element_text(size = 9),
+> legend.title = element_text(size = 7), legend.text = element_text(size
+> = 6))+ theme( legend.position
+>
+> ="bottom", strip.background = element_rect(colour="white"),
+> panel.border = element_blank())
+
+As is expected in the rural sector, the highest proportion of women are
+engaged in farming / agriculture and allied activities. There is a
+significant share of women in self-employment and private sector
+employment in rural areas, additionally. In urban areas, the private
+sector employs the largest proportion of women.
+
+\## Type of Employment
+
+\`\`\`{r type-of-work, fig.height = 4,fig.width = 7} tab_type_work \<-
+df_female_wob %\>%
+
+> filter(work_for_pay == \"Yes; working currently\") %\>%
+> tab_cross(.,\"area_actual\", \"type_of_work\") %\>% mutate(
+>
+> type_of_work = as.character(type_of_work),
+
+type_of_work = case_when( type_of_work == \"Employed in casual daily
+work\" \~ \"Casual Daily Work\",
+
+type_of_work == \"Employed in casual piece work\" \~ \"Casual Piece
+Work\",
+
+type_of_work == \"Employed in contract work \< 1 yr\" \~ \"Contract
+Work(\<1 Year)\",
+
+> type_of_work == \"Self-employed/ own
+
+enterprise\" \~ \"Self-Employed\",
+
+> type_of_work == \"Regular/ Permanent/
+
+Longer Contract work\" \~ \"Regular/Permanent/Contract Work(\>1 Year)\",
+TRUE\~NA_character\_),
+
+type_of_work = factor(type_of_work, levels = c(\"Casual Daily
+Work\",\"Casual Piece Work\",\"Contract Work(\<1
+Year)\",\"Regular/Permanent/Contract Work(\>1
+Year)\",\"Self-Employed\"))
+
+> ) %\>%
+>
+> rename( \"Sector\" = \"area_actual\",
+>
+> \"Type of Employment\" = \"type_of_work\")
+
+plotTwoVar(tab_type_work , \"Type of Employment\", \"Sector\") + labs(
+title = \"Workforce: Type of Employment\",
+
+> \+
+>
+> theme(axis.text = element_text(size = 7), axis.title =
+> element_text(size = 7), plot.title = element_text(size = 9),
+> legend.title = element_text(size = 7), legend.text = element_text(size
+> = 6))+
+>
+> theme( legend.position = \"bottom\",
+>
+> strip.background = element_rect(colour=\"white\"), panel.border =
+> element_blank())
+>
+> x =\"\")
+>
+> In rural areas, casual wage work is predominant for women as early 44
+> percent women are engaged in casual daily work and 9.4 percent are
+> engaged in casual piece work. The next largest source of employment is
+> within the self-employment sector.
+>
+> In urban areas, a majority of women - 29 percent- are self-employed.
+> 19.3 percent of women are engaged in regular/ permanent or long term
+> contract work, which is significantly less than the total proportion
+> of women engaged in casual wage work.
+
+## Location of Employment
+
+> \`\`\`{r location-work,fig.height = 4,fig.width = 7} tab_location_work
+> \<- df_female_wob %\>% filter(work_for_pay == "Yes; working
+> currently") %\>% tab_cross(.,"area_actual", "wp21_work_location") %\>%
+> rename( "Sector" = "area_actual", "Location of Work" =
+> "wp21_work_location")
+>
+> plotTwoVar(tab_location_work , "Location of Work", "Sector") + labs(
+> title = "Workforce: Location of Work", x ="") + theme(axis.text =
+> element_text(size = 7), axis.title = element_text(size = 7),
+> plot.title = element_text(size = 9), legend.title = element_text(size
+> = 7), legend.text = element_text(size = 6))+ theme( legend.position
+> ="bottom", strip.background = element_rect(colour="white"),
+> panel.border = element_blank())
+
+Nearly 70 percent of women surveyed in rural areas report that they work
+outside home,a very small minority of women also report working both
+within and outside home (2.3 percent). In urban areas, the majority
+share of women - 62 percent - report that they work outside home. nearly
+all the remainig women report that they work for pay from within their
+homes.
+
+\## Across Social Categories
+
+\`\`\`{r wfp-social, fig.height = 6,fig.width = 7} tab_soc_wfp \<-
+df_female_wob %\>%
+
+> mutate(
+>
+> social_category = as.character(social_category),
+
+social_category = case_when(social_category %in% c(\"Do Not Know\",
+\"Refused to Answer\") \~ \"Others\",
+
+> TRUE\~social_category), social_category = factor(social_category,
+> levels =
+
+c(\"General\",\"OBC\",\"SC\",\"ST\",\"Others\"))
+
+> ) %\>%
+>
+> tab_crossXtreme(.,
+> \"area_actual\",\"social_category\",\"work_for_pay\")
+>
+> %\>%
+>
+> rename(
+>
+> \"Sector\" = \"area_actual\",
+>
+> \"Social Category\" = \"social_category\"
+>
+> )
+
+write_to_sheet(tab_soc_wfp, \"Sector v Soc Category v WFP\")
+plotthreeVar(tab_soc_wfp, \"work_for_pay\", \"Sector\",\"\`Social
+Category\`\") + labs( x = \"\", title = \"Workforce Particiaption in
+Each Social Category\") + theme( legend.position = \"bottom\",
+
+> strip.background = element_rect(colour=\"white\"), panel.border =
+> element_blank())
+>
+> Across all the social categories, a larger proportion of women have
+> never worked in the rural areas than in the urban areas. There is no
+> significant difference between the women working in rural and urban
+> areas. A higher proportion of women have left the workforce in urban
+> areas than in the rural areas.
+>
+> Approximately 64 percent of women belonging to OBC category have never
+> worked for pay in rural areas - the highest proportion of women to
+> have reorted this among all social categories.
+
+## Across Marital Status
+
+> \`\`{r marital-status, fig.height = 6,fig.width = 7} tab_ms_status \<-
+> df_female_wob %\>% filter( !Marital Status\` == "Refused to answer")
+> %\>% tab_crossXtreme(., "area_actual","Marital Status","work_for_pay")
+> %\>% rename( "Sector" = "area_actual" ) %\>% select(-d)
+> write_to_sheet(tab_ms_status, "Sector v Marital Status v WFP")
+>
+> plotthreeVar(tab_ms_status, "work_for_pay", "Sector","Marital
+> Status") + labs( x = "", title ="Workforce Participation across
+> Marital Status ") + theme( legend.position
+>
+> ="bottom", strip.background = element_rect(colour="white"),
+> panel.border = element_blank())
+>
+> tab_ms \<- tab_cross(df_female_wob %\>% filter( !Marital Status ==
+> "Refused to answer") , "area_actual","Marital Status") %\>% rename(
+> "Sample Size" = "n") write_to_sheet(tab_ms, "Sector v Marital Status")
+> table_kable(tab_ms, "Sector and Marital Status")
+
+Among married women, only 22.8 percent of women are working in the
+
+rural sector and 25.5 percent women are working for pay in the urban
+sector. In comparison, workforce participation among the widowed and
+separated/ divorced women is higher.
+
+\## Across Age Groups
+
+\`\`\`{r age-wfp, fig.height=7, fig.width= 5} tab_age_wfp \<-
+df_female_wob %\>%
+
+> tab_crossXtreme(., \"area_actual\",\"Age Group\",\"work_for_pay\")
+> %\>% rename(
+>
+> \"Sector\" = \"area_actual\"
+>
+> ) %\>%
+>
+> select(-c(\"n\",\"d\"))
+
+write_to_sheet(tab_age_wfp, \"Sector v Age Group v WFP\")
+
+tab_age_line \<- tab_crossXtreme(df_female_wob, \"area_actual\",
+\"age_actual\", \"work_for_pay\")
+
+ggplot(tab_age_line,aes(x=age_actual, y = Percent, color = area_actual))
++
+
+geom_smooth(method = \"loess\", level = 0.95) +
+facet_wrap(\~work_for_pay,nrow = 3) +
+
+> labs(x = \"\",
+>
+> color = \"Sector\",
+>
+> title = \"Workforce Participation across Age\") +
+> scale_color_manual(values = cbp1)+
+>
+> theme( legend.position = \"bottom\",
+>
+> strip.background = element_rect(colour=\"white\"), panel.border =
+> element_blank()) +
+>
+> theme(axis.text = element_text(size = 7), axis.title =
+> element_text(size = 8), plot.subtitle = element_text(size = 7),
+> legend.title = element_text(size = 7), legend.text = element_text(size
+> = 6))
+>
+> We find an inverse U-shaped relationship between age and workforce
+> participation for those women who are currently working implying that
+> as age rises, workforce participation first rises, then falls in both
+> rural and urban areas. A large proportion of women in the workforce
+> are aged between 30 to 40 years.
+>
+> Corresponding to the previous trend, we also see that as age rises,
+> the share of women who are not in the workforce declines, which
+> reinforces the finding above.
+
+## Across Education
+
+> \`\`\`{r education-group, fig.height=7, fig.width= 6} tab_ed_line \<-
+> tab_crossXtreme(df_female_wob, "area_actual", "Education",
+> "work_for_pay") write_to_sheet(tab_ed_line, "Sector v Ed Group v WFP")
+>
+> ggplot(tab_ed_line,aes(x=Education, y = Percent, group =
+> area_actual,color = area_actual)) + geom_line() + geom_point()+
+> facet_wrap(\~work_for_pay,nrow = 3) + labs(x = "", color
+>
+> ="Sector", title = "Workforce Participation across Education
+> Groups") + scale_color_manual(values = cbp1)+ theme( legend.position =
+> "bottom", strip.background = element_rect(colour="white"),
+> panel.border = element_blank()) + theme(axis.text = element_text(size
+> = 7), axis.title = element_text(size = 8), plot.subtitle =
+> element_text(size = 7), legend.title = element_text(size = 7),
+> legend.text = element_text(size = 6))
+
+We see a U-shaped curve for the women who are currently working for pay
+across increasing education levels. A higher percentage of women work in
+the urban areas than in the rural areas across all education levels.
+
+As has been found in the literature as well, we see that workforce
+participation rates of women fall as we move from illiteracy to
+secondary or higher secondary education and then rise again as education
+levels rise above graduate or postgraduate levels.
+
+\## Across Wealth Deciles
+
+\`\`\`{r asset-decile,fig.height=7, fig.width= 6} df_decile_asset \<-
+df_female_wob %\>%
+
+> group_by(area_actual) %\>% mutate(
+>
+> wtd_asset_index = asset_index \* (comp_wt/sum(comp_wt)), decile =
+> ntile(wtd_asset_index,10)
+>
+> )
+
+tab_asset_decile \<- tab_crossXtreme(df_decile_asset,
+\"area_actual\",\"decile\",\"work_for_pay\")
+
+ggplot(tab_asset_decile,aes(x=factor(decile), y = Percent, group =
+area_actual,color = area_actual)) +
+
+> geom_line() + geom_point()+ facet_wrap(\~work_for_pay,nrow = 3) +
+> labs(x = \"\",
+>
+> color = \"Sector\",
+>
+> title = \"Workforce Participation across Wealth Deciles\") +
+> scale_color_manual(values = cbp1)+
+>
+> theme( legend.position = \"bottom\",
+>
+> strip.background = element_rect(colour=\"white\"), panel.border =
+> element_blank()) +
+>
+> theme(axis.text = element_text(size = 7), axis.title =
+> element_text(size = 8), plot.subtitle = element_text(size = 7),
+> legend.title = element_text(size = 7), legend.text = element_text(size
+> = 6))
+>
+> Those in the lower decile, with little wealth, are seen to participate
+> more in the workforce in the urban areas than in the rural areas.
+> Similarly, women belonging to the highest decile
+>
+> tend to participate more in urban areas than in the rural areas. For
+> the women who have never worked, the gap widens when they have never
+> worked at higher deciles, that is, about 60 percent women in rural
+> areas have never worked for pay while 45 percent have never worked for
+> pay in urban areas.
+
+## Skills Training
+
+{r skills-training} tab_skills \<- tab_cross(df_female_wob,
+\"area_actual\", \"skill_training_recieved\") tab_skills_wfp \<-
+tab_cross(df_female_wob, \"area_actual\",\"skill_dev_prog_aware\")
+
+> In urban sector of our sample, 34 percent of respondents are aware of
+> any government run skill training program and r
+> tab_skills\$Percent\[tab_skills\$area_actual==\"Urban\" &
+> tab_skills\$skill_training_recieved==\"Yes\"\] percent reported having
+> received skills related training, while in rural sector these numbers
+> are 42 percent and r
+> tab_skills\$Percent\[tab_skills\$area_actual==\"Rural\" &
+> tab_skills\$skill_training_recieved==\"Yes\"\] percent respectively.
+>
+> \`\`\`{r skills-wfp} tab_skills_wfp \<- tab_crossXtreme(df_female_wob
+> %\>% filter(work_for_pay
+>
+> %in% c("Yes; working currently","No; used to work previously")),
+> sector = "area_actual", crossvar = "work_for_pay", varname =
+> "skill_training_recieved") table_kable(tab_skills_wfp, caption =
+> "Skills Training in Workforce")
+
+Around 90 percent and 85 percent of the women who currently are a part
+of the workforce have never received any skill training in rural and
+urban areas respectively.
+
+\## Household Care Duties and Workforce
+
+\`\`\`{r hhd-care, fig.height= 4, fig.width=6} df_female_wob \<-
+df_female_wob %\>%
+
+mutate( child_duties = case_when(children_household \> 0 \~ \"Children
+in Household\",
+
+> TRUE\~\"No Children in Household\"), elder_duties =
+> case_when(elder_household \> 0 \~ \"Elders in
+
+Household\",
+
+> TRUE\~\"No Elders in Household\"))
+
+tab_children_duties \<- tab_crossXtreme(df_female_wob, \"area_actual\",
+\"child_duties\",\"work_for_pay\")
+write_to_sheet(tab_children_duties,\"Children Duties\")
+
+ggplot(tab_children_duties) + aes(factor(child_duties), Percent,
+fill=work_for_pay) +
+
+> geom_bar(stat=\"identity\") + ylab(\"Percentage\") +
+>
+> geom_text(aes(label=paste0(sprintf(\"%1.1f\", Percent),\"%\")),
+> position=position_stack(vjust=0.5), size = 3) +
+>
+> ggtitle(\"Children in Household and Workforce Participation\") +
+>
+> theme_bw() + facet_wrap(\~area_actual, ncol = 2) +
+> scale_fill_manual(values = cbp1\[c(2,6,7)\]) + labs( x = \"\",
+>
+> fill = \"\")+
+>
+> theme(axis.text = element_text(size = 7), axis.title =
+> element_text(size = 7), plot.title = element_text(size = 9),
+> legend.title = element_text(size = 7), legend.text = element_text(size
+> = 6))+
+>
+> theme( legend.position = \"bottom\",
+>
+> strip.background = element_rect(colour=\"white\"), panel.border =
+> element_blank())
+>
+> \`\`\`{r elder-hhd,fig.height= 4, fig.width=6} tab_elder_duties \<-
+> tab_crossXtreme(df_female_wob, "area_actual",
+> "elder_duties","work_for_pay") write_to_sheet(tab_elder_duties,"Elder
+> Duties")
+>
+> ggplot(tab_elder_duties) + aes(factor(elder_duties), Percent,
+> fill=work_for_pay) + geom_bar(stat="identity") + ylab("Percentage") +
+> geom_text(aes(label=paste0(sprintf("%1.1f", Percent),"%")),
+> position=position_stack(vjust=0.5), size = 3) + ggtitle("Elders in
+> Household and Workforce Participation") + theme_bw() +
+> facet_wrap(\~area_actual, ncol = 2) + scale_fill_manual(values =
+> cbp1\[c(2,6,7)\]) + labs( x = "", fill ="")+ theme(axis.text =
+> element_text(size = 7), axis.title = element_text(size = 7),
+> plot.title = element_text(size = 9), legend.title = element_text(size
+> = 7), legend.text = element_text(size = 6))+
+>
+> theme( legend.position ="bottom", strip.background =
+> element_rect(colour="white"), panel.border = element_blank())
+
+In both rural and urban areas, we see that when there are no children or
+elderly members in the household, there is a higher proportion of women
+which is working for pay. This might indicate a the burden of unpaid
+care work on women.
+
+\`\`\`{r male-wo-barmer} df_male_wob \<- df_male %\>%
+
+> filter(district_name != \"Barmer\")
+
+# Female vs. Male Reporting
+
+> For a subset of our female sample we also interviewed a male
+> respondent in the household. This is aimed at unpacking how male
+> reporting on workforce participation and time-use of females vary from
+> females' self-reported data. For r
+> round(nrow(df_male_wob)\*100/nrow(df_female_wob),1) percent of female
+> respondents we also surveyed male members in the same household.
+
+## Composition of Male Dataset
+
+tab_male \<- df_male_wob %\>%
+
+> rename(\"Relation\" = \"relation_with_femalerespondent\") %\>% mutate(
+>
+> Relation = as.character(Relation),
+
+Relation = case_when(Relation == \"Any other adult male member\" \~
+\"Other Adult Male\",
+
+law\",
+
+Relation == \"Brother -in-law\" \~ \"Brother-in-
+
+TRUE\~Relation),
+
+Relation = factor(Relation, levels = c(\"Husband \",\"Father\",
+\"Brother\", \"Father-in-law\",\"Brother-in-law\",\"Other Adult Male\"))
+
+> ) %\>%
+
+tabOneVar(., \"Relation\") write_to_sheet(tab_male, \"Male Sample
+Relation\")
+
+table_kable(tab_male %\>% select(-n), caption = \"Relation to female
+respondents\")
+
+> Approximately 65 percent of the males who have been surveyed are
+> husbands of the female respondents.
+
+## Age difference
+
+\`\`{r age_difference} library(scales) df_male_wob \<- df_male_wob %\>%
+mutate(Age Difference= age_actual_m- age_actual_f )
+
+> ggplot( df_male_wob) + geom_histogram(aes(x =Age Difference\`, y =
+> (..count..)/sum(..count..)), fill = cbp1\[3\]) + labs( x = "", title
+> =" Difference of Age: Male and Female Repondents", y = "Percent")+
+> scale_y\_continuous(labels = percent)+ theme(axis.text =
+> element_text(size = 7), axis.title = element_text(size = 7),
+> plot.title = element_text(size = 9), legend.title = element_text(size
+> = 7), legend.text = element_text(size
+>
+> = 6))+ theme( legend.position = "bottom", strip.background =
+> element_rect(colour="white"), panel.border = element_blank())
+
+Most of the male respondents are aged the same age or are 5 to 6 years
+older than the females. 25 percent of male respondents are about 4 years
+older than the females.
+
+\\newpage
+
+\## Male Workforce Participation
+
+\`\`\`{r m-wfp}
+
+tab_flp_m \<- df_male_wob %\>% group_by(state,area_actual,district_name)
+%\>% summarise(
+
+\`In Workforce(Percentage)\` = round( sum( comp_wt\[work_for_pay ==
+\"Yes; working currently\"\]) \* 100/sum(comp_wt),1),
+
+\`Dropped out(Percentage)\` = round( sum( comp_wt\[work_for_pay == \"No;
+used to work previously\"\]) \* 100/sum(comp_wt),1),
+
+\`Never Worked(Percentage)\` = round( sum( comp_wt\[work_for_pay ==
+\"No; never worked\"\]) \* 100/sum(comp_wt),1),
+
+> ) %\>%
+>
+> rename( \"State\" = \"state\",
+>
+> \"Sector\" = \"area_actual\", \"District\" = \"district_name\")
+
+table_kable(tab_flp_m, \"District-Wise Men\'s Workforce Participation\")
+
+> %\>%
+>
+> kable_styling(latex_options=\"scale_down\")
+
+write_to_sheet(tab_flp, \"District Wise Men\'s Workforce
+Participation\")
+
+> Male workforce participation ranges from about 68 percent to 88
+> percent in across the districts selected in our survey. The highest
+> rates of participation is in Bangalore and lowest in South-West Delhi.
+> Maximum proportion of drop-outs are visible in South West Delhi - at
+> 21 percent. A significant proportion of men in both rural and urban
+> Jharkhand also report to have dropped out of the workforce.
+
+## Workforce Participation - Male and Female Reporting
+
+> \`\`\`{r mf-reporting} df_male_wob \<- df_male_wob %\>%
+> left_join(df_female\[,c("main_id_new","work_for_pay")\], by =
+> c("main_id"="main_id_new"), suffix = c("\_m", "\_f"))
+>
+> tab_flp_male_report \<- df_male_wob %\>%
+> group_by(state,area_actual,district_name) %\>% summarise( In
+> Workforce(Male Reporting) =
+>
+> round( sum( comp_wt\[female_workforpay == "Yes"\]) \*
+> 100/sum(comp_wt),1), Out of Workforce(Male Reporting) = round( sum(
+> comp_wt\[female_workforpay == "No"\]) \* 100/sum(comp_wt),1), ) %\>%
+> rename( "Sector" = "area_actual" )
+>
+> tab_flp_female_report \<- df_male_wob %\>%
+> group_by(state,area_actual,district_name) %\>
+>
+> \% summarise( In Workforce(Female Reporting) =
+>
+> round( sum( comp_wt\[work_for_pay_f == "Yes; working currently"\]) \*
+> 100/sum(comp_wt),1), Out of Workforce(Female Reporting) =
+>
+> round( sum( comp_wt\[work_for_pay_f %in% c("No; used to work
+> previously","No; never worked")\]) \* 100/sum(comp_wt),1), ) %\>%
+> rename( "Sector" = "area_actual" )
+>
+> tab_mf_f\_combined \<- tab_flp_female_report %\>%
+> left_join(tab_flp_male_report %\>% ungroup() %\>%
+> select(!c("state","Sector")), by = "district_name")
+> write_to_sheet(tab_mf_f\_combined, "Sector v MF FWFP")
+> table_kable(tab_mf_f\_combined
+>
+> %\>% select(-c("Out of Workforce(Female Reporting)","Out of
+> Workforce(Male Reporting)")), "Female Workforce Participation - Male
+> vs. Female Reporting") %\>% kable_styling(latex_options="scale_down")
+> %\>% add_footnote("All estimates in per cent", notation = "none")
+
+There is a small difference in the reporting of workforce participation
+of women by male members in the household vs. when female respondents
+self-report across all districts. Except South West Delhi, in all other
+8 districts, the figures for workforce
+
+participation obtained by women's self reporting are higher as compared
+to when men report on women's work.
+
+The largest difference in reporting is in Jaipur, where 25 percent women
+reported to be a part of the workforce while when workforce
+participation was estimate based on male responses, the figure dropped
+down by nearly 5 percentage points to about 20 percent.
+
+\\newpage
+
+\# What are the enablers and barriers?
+
+\## Barriers for those who dropped out of workforce
+
+\`\`\`{r barriers, fig.height=5, fig.width=8} tab_barriers \<-
+df_female_wob %\>%
+
+> group_by(area_actual) %\>%
+>
+> filter(work_for_pay == \"No; used to work previously\") %\>%
+> summarise(across(starts_with(\"wp23_quit\") & !contains(\"\_rank\_\"),
+>
+> \~ round(sum(comp_wt\[. == 1\])\*100/sum(comp_wt),1)))
+>
+> %\>%
+>
+> t() %\>%
+>
+> as.data.frame()
+
+long_barriers \<- tibble::rownames_to_column(tab_barriers, \"Barrier\")
+
+> %\>%
+>
+> row_to_names(row_number = 1) %\>% rename(Barrier = area_actual) %\>%
+> mutate(
+>
+> Barrier = tolower(str_replace(Barrier, \"wp23_quit\_\",\"\"))
+>
+> ) %\>% pivot_longer(c(\"Rural\",\"Urban\"),
+>
+> names_to = \"Sector\", values_to = \"Percent\")
+
+long_barriers \<- long_barriers %\>% mutate(Barrier =
+dplyr::recode_factor(Barrier,
+
+> married = \"Got married\", children = \"Had children\",
+>
+> burden_housework = \"Household chores and responsibilities\",
+> elderly_care = \"Had to care for elderly/ disabled family
+
+members\",
+
+> health_issues = \"Own health issues\",
+>
+> higher_education = \"Started pursuing higher education\",
+> wages_inadequate = \"Wages were inadequate\",
+>
+> less_pay_men = \"Was getting paid less than men for the same
+
+job\",
+
+> less_pay_women = \"Was getting paid less than other women for
+
+the same job\",
+
+> no_social_security = \"There were no social security benefits\",
+
+lack_basic_facilities = \"Workplace lacked basic facilities (drinking
+water/ washroom etc.)\",
+
+lon_distance_commute = \"Long distance/ commuting hours to work
+location\",
+
+> lack_transport = \"Lack of transport\", migrated = \"Migrated\",
+>
+> long_working_hours = \"Working hours were too long\", safety_issues =
+> \"Safety issues\",
+>
+> workplace_harrassment = \"Workplace harassment experience\",
+> lack_family_support = \"Lack of support/ objections to work
+
+from parent/ husband/ other family members\",
+
+> left_covid = \"Left the job myself due to COVID\", employer_covid =
+> \"Was fired from the job by employer/company
+
+due to COVID\",
+
+> company_shut_covid = \"Due to covid company shut down\", others =
+> \"Other Miscellaneous\"),
+>
+> Percent = as.numeric(Percent),
+
+\`Barrier Type\` = case_when( Barrier %in% c(\"Left the job myself due
+to COVID\",\"Was fired from the job by employer/company due to COVID\",
+\"Due to covid company shut down\") \~ \"COVID-19 Related\",
+
+Barrier %in% c(\"Got married\", \"Had children\", \"Household chores and
+responsibilities\", \"Had to care for elderly/ disabled family
+members\", \"Lack of support/ objections to work from parent/ husband/
+other family members\") \~ \"Household and Care Work\",
+
+inadequate\",
+
+job\",
+
+washroom etc.)\",
+
+> Barrier %in% c(\"Wages were
+
+\"Was getting paid less than men for the same job\", \"Was getting paid
+less than other women for the same
+
+\"There were no social security benefits\", \"Workplace lacked basic
+facilities (drinking water/
+
+\"Long distance/ commuting hours to work location\", \"Lack of
+transport\",
+
+\"Working hours were too long\",
+
+\"Workplace harassment experience\") \~ \"Work and
+
+Workplace Related\",
+
+> TRUE \~ \"Others\")) %\>% filter(Barrier != \"other_specify\")
+
+write_to_sheet(long_barriers,sheetname = \"Sector v barriers\")
+
+> barrier_plot(\"Work and Workplace Related\") barrier_plot(\"Household
+> and Care Work\") barrier_plot(\"COVID-19 Related\")
+> barrier_plot(\"Others\")
+>
+> Some of the biggest barriers to women's work in rural sector include
+> inadequate wages, marriage, birth of a child and household chores and
+> responsibilities. In the urban sector,
+>
+> inadequate wages are not as prominent a factor for dropping our of the
+> workforce as are factors such as marriage, birth of a child and
+> household chores and responsibilities.
+>
+> 19.5 percent of women dropped out of the workforce in the rural areas
+> because inadequate wages were paid to them while 4.5 percent did so in
+> the urban areas. 2.3 percent dropped out of the urban force because of
+> high commuting hours to the workplace. When we look at household and
+> care work as barriers, 26 percent of women in the urban area left
+> their job because they had children and 24 percent of women left their
+> job after marriage.
+>
+> Among Covid-19 related barriers, leaving the job on one's own is more
+> prominent among women workers in both rural and urban areas.
+> Additionally, in urban areas, 5 percent were fired from their jobs due
+> to the pandemic and an additional 5 percent were forced to leave the
+> job due to their company shutting down.
+>
+> Health issues are also a major factor for women respondents to leave
+> the workforce, implying the need for developing better health-care
+> infrastructure. When we look at other barriers, 19 percent women in
+> the urban sector and 26 percent women in the rural sector left their
+> job due to their own health issues.
+
+## Enablers for those in the Workforce
+
+> \`\`\`{r enablers, fig.height=5, fig.width=8} tab_enablers \<-
+> df_female_wob %\>% group_by(area_actual) %\>% filter(work_for_pay ==
+> "Yes; working currently") %\>%
+> summarise(across(starts_with("wp21_factors\_") S !contains("*rank*"),
+> \~ round(sum(comp_wt\[. == 1\])\*100/sum(comp_wt),1))) %\>% t() %\>%
+> as.data.frame()
+>
+> long_enablers \<- tibble::rownames_to_column(tab_enablers, "Enabler")
+> %\>% row_to_names(row_number = 1) %\>% rename(Enabler = area_actual)
+> %\>% mutate( Enabler = tolower(str_replace(Enabler,
+> "wp21_factors\_","")) ) %\>% pivot_longer(c("Rural","Urban"), names_to
+> = "Sector", values_to = "Percent")
+>
+> long_enablers \<- long_enablers %\>% mutate(Enabler =
+> dplyr::recode_factor(Enabler, no_interfere_household = "No
+> interference with housework and care responsibilities", family_engaged
+> = "Friends/ family are engaged in the same work", family_support =
+> "Family allows it/ supports it", education_skill = "Work suited to
+> education/ training/ skills", only_work_available = "Only work
+> opportunity available", pays_well = "Pays well", flexible_time =
+> "Flexible work timings", home_close = "Workplace close to home",
+> transport_available = "Transport to and from workplace is available
+> easily", creche = "Creche/ childcare facilities are available", others
+> = "Other Miscellaneous"), Percent = as.numeric(Percent), Enabler Type
+> = case_when( Enabler %in% c("No interference with housework and care
+> responsibilities","Friends/ family are engaged in the same work",
+> "Family allows it/ supports it") \~ "Household and Care Work Related",
+> Enabler %in% c("Pays well", "Flexible work timings", "Workplace close
+> to home", "Transport to and from workplace is available easily",
+> "Creche/ childcare facilities are available") \~ "Work and Workplace
+> Related", TRUE \~ "Others")) %\>% filter(!Enabler %in%
+> c("others_specify","Creche/ childcare facilities are available") )
+>
+> write_to_sheet(long_enablers,sheetname = "Sector v enablers")
+>
+> enabler_plot("Work and Workplace Related") enabler_plot("Household and
+> Care Work Related") enabler_plot("Others")
+>
+> \`\`\`
+>
+> When we look at enablers related to work and workplace, having a
+> location of workplace closer to home and flexible work timings are a
+> major enabler for women in both rural and urban areas. Additionally,
+> in urban areas, decent wages are a major factor which influence
+> women's choice to work in a particular workplace.
+>
+> As 44 percent women in urban areas and nearly 34 percent women in
+> rural areas say that they choose work which does not interference with
+> housework or care work, it shows the burden of unpaid and care work on
+> women, and signifies that women would benefit from jobs which have
+> flexible timings etc.
+>
+> In urban areas, women also show a preference for work which is suited
+> to their educational training or skill. This has policy imperatives as
+> special skilling and training programs can be developed for women
+> which make them eligible for a wider variety of jobs.
+
+# Unpacking the Time Use Survey (To be Done)
+
+> **References**
+>
+> Chakraborty. S, (2019), What Does the Periodic Labour Force Survey
+> Tell Us?, January 23, 2019 (Available at:
+> https://thewire.in/labour/periodic-labour-force-survey-data-
+> employment)
+>
+> Mitra, A, (2021), PLFS Data: What numbers hide? August 25, 2021
+> (Available at:
+> [https://www.thehindubusinessline.com/opinion/plfs-data-what-the-numbers-hide/](http://www.thehindubusinessline.com/opinion/plfs-data-what-the-numbers-hide/)
+> article36084086.ece)
+>
+> Woetzel, J., Madgavkar, A., Sneader, K., Tonby, O., Lin, D. Y., Lydon,
+> J., S Gubieski, M. (2018). The power of parity: advancing women's
+> equality in Asia pacific. Shanghai: The McKinsey Global Institute
+> Report.
+>
+> Joshi, R., ery McManus, J., Nagpal, K., S Fraker, A. (2020). Are voter
+> rolls suitable sampling frames for household surveys? Evidence from
+> India. IDinsight working paper.
+>
+> Periodic Labour Force Survey 2018-19, NSSO, MoSPI, GOI. Employment
+> Unemployment Survey 2004-05, NSSO, MoSPI, GOI.
+
+# Appendices
+
+1.  FLFS Female Questionnaire
+
+2.  FLFS Male Questionnaire
+
+3.  Sample Design and Estimation procedure for the FLFP survey

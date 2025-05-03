@@ -1,8 +1,6 @@
 # Script -----
 # Name: HFC.R
-# Author: Aarthi Iyer
-# Date: 29/11/2021
-# Purpose: High frequency checks of main female survey
+# Purpose: High-frequency checks of main female survey
 
 #########################################################################################
 #Loading packages

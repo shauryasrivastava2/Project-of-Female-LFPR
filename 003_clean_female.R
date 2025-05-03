@@ -1,6 +1,6 @@
 # Script -----
 # Name: clean_female.R
-# Author: Aarthi Iyer, Aparna G
+# Author: SHAURYA
 # Purpose: Labelling of variables in the female survey
 
   

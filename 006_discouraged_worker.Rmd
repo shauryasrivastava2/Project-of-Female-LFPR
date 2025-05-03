@@ -1,0 +1,651 @@
+---
+title: "Descriptive statistics of Discouraged worker"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  bookdown::pdf_document2:
+    toc: no
+    toc_depth: 3
+    keep_tex: no
+  bookdown::word_document2:
+    fig_caption: yes
+  word_document:
+    toc: no
+    toc_depth: '3'
+always_allow_html: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = FALSE,
+	fig.align = "center",
+	fig.height = 3,
+	fig.width = 5,
+	message = FALSE,
+	warning = FALSE,
+	dpi = 300
+)
+
+library(here)
+library(tidyverse)
+library(scales)
+library(janitor)
+
+# Theme update
+theme_set(theme_bw())
+theme_update(plot.margin = unit(c(1,1,1,1), "cm"))
+
+# Setting Directories ----
+
+# Sub-directories
+rawdata <- paste0(here::here(), "/data/raw/main_raw/")
+scripts <- paste0(here::here(), "/data/scripts/main_scripts/")
+cleandata <- paste0(here::here(), "/data/clean/main_clean/")
+figures <- paste0(here::here(), "/data/output/figures/")
+
+# Functions to plots different types of data ----
+source(paste0(here(),"/data/scripts/","tab_plot_functions_new.R"))
+
+# Colour Palette
+cbp1 <- c("#003f5c","#00c698","#58508d","#bc5090","#0069c0","#ff6361","#ffa600")
+
+# Loading datasets
+load(paste0(cleandata, "SurveyCleanData.RData"))
+
+df_female_wob <- df_female %>% 
+  filter(!district_name == "Barmer")
+df_male_wob <- df_male %>% 
+  filter(!district_name == "Barmer")
+
+# Disc_Worker: 
+# Used to work- Consider those who quit. Remove those whose primary reason for quitting was illness and education.Retain those who are willing and not looking for work. Lastly, retain those who are not willing to work.
+# Never worked: Retain those who are willing and not looking for work. Include those who are not willing to work for reasons other than education and illness
+
+df_disc <- df_female_wob %>% 
+  mutate(disc_worker = as.factor(case_when(wp22_looking_work == "No" | wp22_work_not_willing_illness != 1 & wp22_work_not_willing_education != 1 |(wp23_quit_higher_education != 1 & wp23_quit_health_issues != 1 & wp23_looking_work == "No") | (wp23_quit_higher_education != 1 & wp23_quit_health_issues != 1 & wp23_work_if_available == "No") ~1,
+                                           TRUE~0)))
+df_disc_only <- df_disc %>% 
+  filter(disc_worker == 1)
+
+write.csv(df_disc, paste0(cleandata, "discouraged.csv"))
+
+# Cleaning variables----
+
+df_disc <- df_disc %>% 
+  ungroup() %>% 
+  mutate(
+    Married = as.factor(case_when(marital_status == "Married" ~ "Married",
+                                  TRUE ~ "Not Married")))
+df_disc <- df_disc %>% 
+  mutate(
+    social_category = as.character(social_category),
+    social_category = case_when(social_category %in% c("Do Not Know", "Refused to Answer") ~ "Others",
+                                TRUE~social_category),
+    social_category = factor(social_category, levels = c("General","OBC","SC","ST","Others")),
+    primary_income_earner = as.factor(case_when(primary_income_earner == "No-one" ~ "No-one",
+                                                primary_income_earner == "Spouse" ~ "Spouse", 
+                                                primary_income_earner == "Self" ~ "Self",
+                                                TRUE~ "Others")),
+    highest_education = case_when(highest_education %in% c("No education")~"Not Literate",
+                              highest_education %in% c("class 1", "class 2","class 3","class 4","class 5")~"Primary", 
+                              highest_education %in% c("class 6","class 7","class 8")~"Secondary",
+                              highest_education %in% c("class 9","class 10")~"Secondary",
+                              highest_education %in% c("class 11","class 12")~"Higher Secondary",
+                              highest_education %in% c("Graduate","Diploma")~"Graduate",
+                              highest_education %in% c("Post Graduate","Higher")~"Post Graduate and Above",
+                               TRUE~NA_character_),
+         highest_education = factor(highest_education,  levels = c("Not Literate", "Primary", "Secondary", "Higher Secondary","Graduate","Post Graduate and Above")),
+    children_household = as.factor(children_household),
+    studying_household = as.factor(studying_household),
+    casual_daily_household = as.factor(casual_daily_household),
+    casual_piece_household = as.factor(casual_piece_household),
+    permanent_work_household = as.factor(permanent_work_household)) %>% 
+  rename("Social Category" = "social_category",
+         "Household Head" = "head_household",
+         "Primary Income Earner" = "primary_income_earner",
+         "Education of PIE" = "highest_education")
+
+# Functions----
+plot_disc_area <- function(var_name){
+  tab <- df_disc %>% 
+  group_by(area_actual, !!sym(var_name)) %>% 
+  mutate(T_AS = n()) %>% 
+  group_by(area_actual, disc_worker, !!sym(var_name), .drop = F) %>% 
+  summarise(N = n(),
+            Percentage = round(N/first(T_AS)*100,2)) %>%
+  filter(disc_worker == 1) %>% 
+  adorn_totals()
+
+ggplot(data = tab %>% filter(area_actual != "Total"), mapping = aes(x = !!sym(var_name), y = Percentage, fill = area_actual))+
+  geom_col(position = "dodge")+
+  geom_text(aes(label = Percentage),position=position_dodge(width=0.75), vjust=-0.25, size=2)+
+  theme_bw() +
+    scale_x_discrete(labels = wrap_format(12))+
+    theme(axis.text = element_text(size = 7),
+          axis.title = element_text(size = 7),
+          plot.title = element_text(size = 9),
+          legend.title = element_text(size = 7),
+          legend.text = element_text(size = 6))+ 
+    theme( legend.position = "bottom",
+           strip.background = element_rect(colour="white"))
+}
+
+tab23_factors <- function(dataframe, varname){
+  tab <- df_disc %>% 
+  select(starts_with("wp23_quit"), !!sym(varname)) %>% 
+  select(-c(contains("_rank_"), contains("_other"))) %>% 
+  pivot_longer(cols = starts_with("wp23"),
+               names_to = "Reasons",
+               values_drop_na = T) %>%
+  group_by(Reasons) %>% 
+  mutate(
+    Total = sum(value)
+  ) %>% 
+  group_by(!!sym(varname), Reasons) %>% 
+  summarise(
+    Frequency = sum(value)
+    # Percentage = round(Frequency/first(Total)*100,2)
+  ) %>% 
+  pivot_wider(names_from = !!sym(varname), 
+              values_from =  c(Frequency))
+  return(tab)
+}
+
+table_kable <- function(tableframe, caption) {
+  
+  knitr::kable(tableframe, caption = caption, booktabs = TRUE) %>%
+    kableExtra::kable_styling(font_size = 10,latex_options = "hold_position", full_width = FALSE) %>% 
+    row_spec(0, bold = T) %>% # format last row
+    column_spec(1, italic = T)
+}
+
+
+tab22_factors <- function(dataframe, varname){
+  tab <- df_disc %>% 
+  select(starts_with("wp22_work_not_willing"), !!sym(varname)) %>% 
+  select(-c(contains("_rank_"), contains("others"))) %>% 
+  pivot_longer(cols = starts_with("wp22"),
+               names_to = "Reasons",
+               values_drop_na = TRUE) %>%
+  group_by(Reasons) %>% 
+  mutate(
+    Total = sum(value)
+  ) %>% 
+  group_by(!!sym(varname), Reasons) %>% 
+  summarise(
+    Frequency = sum(value)
+    # Percentage = round(Frequency/first(Total)*100,2)
+  ) %>% 
+  pivot_wider(names_from = !!sym(varname), 
+              values_from =  c(Frequency)) 
+  return(tab)
+}
+
+```
+
+\newpage
+
+## Definition of Discouraged Worker
+
+In the study, the following two types of workers are termed are discouraged: 1) Those in the labourforce who are willing but not looking for work. 2) Those out of the labourforce who are not willing to work for reasons like carework, safety, restrictions etc.
+
+Non-discouraged workers are those who are currently working, and those who are willing and have been looking for work in the past month.
+
+
+## District of residence
+
+```{r state}
+tab_district <- df_disc %>% 
+  group_by(area_actual, district_name) %>% 
+  summarise(
+    Total = n()
+  )
+
+tab_district_disc <- df_disc_only %>% 
+  group_by(area_actual, district_name) %>% 
+  summarise(
+    `Number of discouraged` = n()
+  ) %>% 
+  left_join(tab_district) %>%
+  mutate(
+   Percentage = round(`Number of discouraged`/Total*100,2)
+  )
+
+write.csv(tab_district_disc, paste0(figures, "district"))
+table_kable(tableframe = tab_district_disc ,caption = "Distribution of discouraged workers across districts")
+```
+
+The percentage of discouraged workers is lowest in the districts of Karnataka (where the LFP rates were highest).
+
+## Age of the respondent
+
+```{r age}
+
+tab_age_disc <- tab_cross(df_disc_only, "area_actual","age_actual")
+tab_age <- tab_cross(df_female_wob, "area_actual","age_actual") %>% 
+  left_join(tab_age_disc, by = c("area_actual","age_actual"), suffix = c("", "_disc"))
+tab_age_compare <- tab_age  %>% 
+  mutate(share_dw = n_disc/n) %>% 
+  select(-c(Percent, Percent_disc))
+
+ggplot(data=tab_age, aes(x=age_actual, y=n, colour = area_actual)) +
+  geom_smooth()+
+  ggtitle("ALL")
+ggplot(data=tab_age, aes(x=age_actual, y=n_disc, colour = area_actual)) +
+  geom_smooth()+
+  scale_y_continuous(limit = c(0,150))+
+  ggtitle("Discouraged")
+ggplot(data=tab_age_compare, aes(x=age_actual, y=share_dw, colour = area_actual)) +
+  geom_smooth()+
+  scale_y_continuous(limit = c(0,1))+
+  ggtitle("Comparison")
+
+tab_disc_age <- tab_crossXtreme(df_disc, "area_actual","disc_worker","age_actual") 
+  
+ggplot(data=tab_disc_age, aes(x=age_actual, y=Percent, colour = as.factor(disc_worker))) +
+  geom_smooth()+
+  scale_y_continuous(limit = c(0,4.5))+
+  facet_grid("area_actual")+
+  ggtitle("Discouraged workers vs the rest across sectors")
+```
+
+
+```{r education}
+plot_list <- list("Social Category","Education", "Marital Status","religion", "Household Head", "Primary Income Earner", "Education of PIE","family_type", "children_household", "skill_training_recieved","drinking_water","house_type", "house_toilet", "electricity_connection", "jan_dhan_ac", "studying_household", "casual_daily_household", "permanent_work_household", "casual_piece_household", "knowledge_computer", "knowledge_smartphone", "knowledge_internet")
+lapply(plot_list, plot_disc_area)
+```
+
+
+## Transport facility
+
+```{r transport}
+# tab_transport <- df_disc %>%
+#  select(disc_worker, starts_with("transport")) %>%
+#  select(-c(contains("specify"))) %>%
+#  pivot_longer(
+#    cols = starts_with("transport"),
+#    names_to = "Mode",
+#    values_to = "Number"
+#  ) %>%
+#  group_by(Mode, disc_worker) %>%
+#  summarise(
+#     preferred_transport = sum(Number),
+#     Total = n(),
+#     Percent = round(preferred_transport/Total*100, 1)
+#  )
+# 
+# ggplot(tab_transport, aes(x=Mode, y=Percent, fill=disc_worker))+
+#  geom_col(position = "dodge")+
+#  scale_x_discrete(labels = str_wrap(tab_transport$Mode, width = 10), breaks = tab_transport$Mode)
+# 
+# tab_disc_transport <- df_disc %>%
+#  select(disc_worker, area_actual, starts_with("transport")) %>%
+#  select(-c(contains("specify"))) %>%
+#  pivot_longer(
+#    cols = starts_with("transport"),
+#    names_to = "Mode",
+#    values_to = "Number"
+#  ) %>%
+#  group_by(Mode, disc_worker, area_actual) %>%
+#  summarise(
+#     preferred_transport = sum(Number),
+#     Total = n(),
+#     Percent = round(preferred_transport/Total*100, 1)
+#  )
+# 
+# ggplot(tab_disc_transport, aes(x=Mode, y=Percent, fill=disc_worker)) +
+#  geom_col(position = "dodge")+
+#  facet_grid(area_actual)
+
+tab_transport <- df_disc %>% 
+  select(starts_with("transport"), disc_worker, area_actual) %>% 
+  select(-c(contains("specify"))) %>% 
+  pivot_longer(
+    cols = starts_with("transport"),
+    names_to = "Modes",
+    values_drop_na = T
+  ) %>% 
+  group_by(Modes,area_actual) %>%
+  mutate(D = sum(value),
+         Total_AT = n()) %>% 
+  group_by(Modes,area_actual, disc_worker) %>% 
+  summarise(
+    D = first(D),
+    Total_AT = first(Total_AT),
+    C = sum(value),
+    Percentage = round(C/D*100,1)) %>% 
+  filter(disc_worker == 1)
+
+ggplot(data = tab_transport %>% filter(area_actual != "Total"), mapping = aes(x = Modes, y = Percentage, fill = area_actual))+
+  geom_col(position = "dodge")+
+  geom_text(aes(label = Percentage),position=position_dodge(width=0.75), vjust=-0.25, size=2)+
+  theme_bw() +
+    scale_x_discrete(labels = wrap_format(12))+
+    theme(axis.text = element_text(size = 7),
+          axis.title = element_text(size = 7),
+          plot.title = element_text(size = 9),
+          legend.title = element_text(size = 7),
+          legend.text = element_text(size = 6))+ 
+    theme( legend.position = "bottom",
+           strip.background = element_rect(colour="white"))
+
+```
+
+\newpage
+## Forms of savings
+
+```{r saving}
+# tab_savings <- df_disc %>%
+#   select(starts_with("savings"), disc_worker) %>%
+#   select(-c(contains("specify"))) %>%
+#   pivot_longer(
+#     cols = starts_with("savings"),
+#     names_to = "Form",
+#     values_to = "Number",
+#     values_drop_na = TRUE
+#   ) %>%
+#   group_by(Form, disc_worker) %>%
+#   summarise(
+#      Type = sum(Number),
+#      Total = n(),
+#      Percent = round(Type/Total*100, 1))
+# 
+# ggplot(tab_savings, aes(x=Form, y=Percent, fill=disc_worker))+
+#  geom_bar(stat = "identity", position = "dodge")+
+#  scale_x_discrete(labels = wrap_format(10))
+# 
+# tab_disc_savings <- df_disc %>%
+#   select(starts_with("savings"), disc_worker, area_actual) %>%
+#   select(-c(contains("specify"))) %>%
+#   pivot_longer(
+#     cols = starts_with("savings"),
+#     names_to = "Form",
+#     values_to = "Number",
+#     values_drop_na = TRUE
+#   ) %>%
+#   group_by(Form, disc_worker, area_actual) %>%
+#   summarise(
+#      Type = sum(Number),
+#      Total = n(),
+#      Percent = round(Type/Total*100, 1))
+# 
+# ggplot(tab_savings, aes(x=Form, y=Percent, fill=disc_worker))+
+#  geom_bar(stat = "identity", position = "dodge")+
+#   facet_grid(area_actual)+
+#  scale_x_discrete(labels = wrap_format(10))
+# 
+# table_kable(tableframe = tab_savings ,caption = "Different forms of savings by individuals")
+
+tab_savings <- df_disc %>% 
+  select(starts_with("savings"), disc_worker, area_actual) %>% 
+  select(-c(contains("specify"))) %>% 
+  pivot_longer(
+    cols = starts_with("savings"),
+    names_to = "Form",
+    values_drop_na = T
+  ) %>% 
+  group_by(Form, area_actual) %>%
+  mutate(D = sum(value),
+         Total_AT = n()) %>% 
+  group_by(Form, area_actual, disc_worker) %>% 
+  summarise(
+    D = first(D),
+    Total_AT = first(Total_AT),
+    C = sum(value),
+    Percentage = round(C/D*100,1)) %>% 
+  filter(disc_worker == 1)
+
+ggplot(data = tab_savings %>% filter(area_actual != "Total"), mapping = aes(x = Form, y = Percentage, fill = area_actual))+
+  geom_col(position = "dodge")+
+  geom_text(aes(label = Percentage),position=position_dodge(width=0.75), vjust=-0.25, size=2)+
+  theme_bw() +
+    scale_x_discrete(labels = wrap_format(12))+
+    theme(axis.text = element_text(size = 7),
+          axis.title = element_text(size = 7),
+          plot.title = element_text(size = 9),
+          legend.title = element_text(size = 7),
+          legend.text = element_text(size = 6))+ 
+    theme( legend.position = "bottom",
+           strip.background = element_rect(colour="white"))
+
+```
+
+\newpage
+## Access to documents
+
+```{r access}
+# tab_documents <- df_disc %>%
+#   select(starts_with("documents")) %>%
+#   select(-c(contains("specify"))) %>%
+#   pivot_longer(
+#     cols = starts_with("documents"),
+#     names_to = "Form",
+#     values_to = "Number",
+#     values_drop_na = TRUE
+#   ) %>%
+#   group_by(Form) %>%
+#   summarise(
+#      Type = sum(Number),
+#      Total = n(),
+#      Percent = round(Type/Total*100, 1))
+# 
+# table_kable(tableframe = tab_documents, caption = "")
+
+tab_documents <- df_disc %>% 
+  select(starts_with("documents"), disc_worker, area_actual) %>% 
+  select(-c(contains("specify"))) %>% 
+  pivot_longer(
+    cols = starts_with("documents"),
+    names_to = "Form",
+    values_drop_na = T
+  ) %>% 
+  group_by(Form, area_actual) %>%
+  mutate(D = sum(value),
+         Total_AT = n()) %>% 
+  group_by(Form, area_actual, disc_worker) %>% 
+  summarise(
+    D = first(D),
+    Total_AT = first(Total_AT),
+    C = sum(value),
+    Percentage = round(C/D*100,1)) %>% 
+  filter(disc_worker == 1)
+
+ggplot(data = tab_documents %>% filter(area_actual != "Total"), mapping = aes(x = Form, y = Percentage, fill = area_actual))+
+  geom_col(position = "dodge")+
+  geom_text(aes(label = Percentage),position=position_dodge(width=0.75), vjust=-0.25, size=2)+
+  theme_bw() +
+    scale_x_discrete(labels = wrap_format(12))+
+    theme(axis.text = element_text(size = 7),
+          axis.title = element_text(size = 7),
+          plot.title = element_text(size = 9),
+          legend.title = element_text(size = 7),
+          legend.text = element_text(size = 6))+ 
+    theme( legend.position = "bottom",
+           strip.background = element_rect(colour="white"))
+
+```
+## Cooking method
+```{r food}
+tab_cook <- df_disc %>% 
+  select(starts_with("cooking"), disc_worker, area_actual) %>% 
+  select(-c(contains("others"))) %>% 
+  pivot_longer(
+    cols = starts_with("cooking"),
+    names_to = "Types",
+    values_drop_na = T
+  ) %>% 
+  group_by(Types,area_actual) %>%
+  mutate(D = sum(value),
+         Total_AT = n()) %>% 
+  group_by(Types,area_actual, disc_worker) %>% 
+  summarise(
+    D = first(D),
+    Total_AT = first(Total_AT),
+    C = sum(value),
+    Percentage = round(C/D*100,1)) %>% 
+  filter(disc_worker == 1)
+
+ggplot(data = tab_cook %>% filter(area_actual != "Total"), mapping = aes(x = Types, y = Percentage, fill = area_actual))+
+  geom_col(position = "dodge")+
+  geom_text(aes(label = Percentage),position=position_dodge(width=0.75), vjust=-0.25, size=2)+
+  theme_bw() +
+    scale_x_discrete(labels = wrap_format(12))+
+    theme(axis.text = element_text(size = 7),
+          axis.title = element_text(size = 7),
+          plot.title = element_text(size = 9),
+          legend.title = element_text(size = 7),
+          legend.text = element_text(size = 6))+ 
+    theme( legend.position = "bottom",
+           strip.background = element_rect(colour="white"))
+  
+```
+
+## Types of assets owned
+```{r assets}
+tab_assets <- df_disc %>% 
+  select(starts_with("personal_assets"), disc_worker, area_actual) %>% 
+  select(-c(contains("others"))) %>% 
+  pivot_longer(
+    cols = starts_with("personal"),
+    names_to = "Types",
+    values_drop_na = T
+  ) %>% 
+  group_by(Types,area_actual) %>%
+  mutate(D = sum(value),
+         Total_AT = n()) %>% 
+  group_by(Types,area_actual, disc_worker) %>% 
+  summarise(
+    D = first(D),
+    Total_AT = first(Total_AT),
+    C = sum(value),
+    Percentage = round(C/D*100,1)) %>% 
+  filter(disc_worker == 1)
+
+ggplot(data = tab_assets %>% filter(area_actual != "Total"), mapping = aes(x = Types, y = Percentage, fill = area_actual))+
+  geom_col(position = "dodge")+
+  geom_text(aes(label = Percentage),position=position_dodge(width=0.75), vjust=-0.25, size=2)+
+  theme_bw() +
+    scale_x_discrete(labels = wrap_format(12))+
+    theme(axis.text = element_text(size = 7),
+          axis.title = element_text(size = 7),
+          plot.title = element_text(size = 9),
+          legend.title = element_text(size = 7),
+          legend.text = element_text(size = 6))+ 
+    theme( legend.position = "bottom",
+           strip.background = element_rect(colour="white"))
+
+```
+
+<!-- ## Accessing bank account per month for withdrawals -->
+
+<!-- ```{r withdraw-bank} -->
+<!-- tab_withdrawal <- df_disc %>% mutate(access_bank_ac_withdrawal = as.factor(access_bank_ac_withdrawal)) %>% -->
+<!--   tab_cross(.,"disc_worker", "access_bank_ac_withdrawal") -->
+<!-- plotTwoVar(tab_withdrawal, "access_bank_ac_withdrawal","disc_worker") -->
+
+<!-- ``` -->
+
+<!-- ## Reasons of discouragement across Marital Status -->
+<!-- ```{r marital-status} -->
+<!-- tab22_married <- df_disc %>% -->
+<!--   select(starts_with("wp22_work_not_willing"), Married) %>% -->
+<!--   select(-c(contains("_rank_"), contains("others"))) %>% -->
+<!--   pivot_longer(cols = starts_with("wp22"), -->
+<!--                names_to = "Reasons", -->
+<!--                values_drop_na = TRUE) %>% -->
+<!--   group_by(Reasons) %>% -->
+<!--   mutate( -->
+<!--     Total = sum(value) -->
+<!--   ) %>% -->
+<!--   group_by(Married, Reasons) %>% -->
+<!--   summarise( -->
+<!--     Frequency = sum(value), -->
+<!--     Percentage = round(Frequency/first(Total)*100,2) -->
+<!--   ) %>% -->
+<!--   pivot_wider(names_from = Married, -->
+<!--               values_from =  c(Frequency, Percentage)) -->
+<!-- table_kable(tableframe = tab22_married, caption = "Reasons for not willing to work") -->
+
+<!-- tab23_married <- df_disc %>% -->
+<!--   select(starts_with("wp23_quit"), Married) %>% -->
+<!--   select(-c(contains("_rank_"), contains("_other"))) %>% -->
+<!--   pivot_longer(cols = starts_with("wp23"), -->
+<!--                names_to = "Reasons", -->
+<!--                values_drop_na = T) %>% -->
+<!--   group_by(Reasons) %>% -->
+<!--   mutate( -->
+<!--     Total = sum(value) -->
+<!--   ) %>% -->
+<!--   group_by(Married, Reasons) %>% -->
+<!--   summarise( -->
+<!--     Frequency = sum(value), -->
+<!--     Percentage = round(Frequency/first(Total)*100,2) -->
+<!--     ) %>% -->
+<!--   pivot_wider(names_from = Married, -->
+<!--               values_from =  c(Frequency, Percentage)) -->
+<!-- table_kable(tableframe = tab23_married, caption = "Reasons for quitting work") -->
+<!-- ``` -->
+
+<!-- \newpage -->
+<!-- ## Reasons for discouragement across social categories -->
+<!-- ```{r social_category} -->
+<!-- tab22_soc_cat <- tab22_factors(df_disc, "Social Category") -->
+<!-- tab23_soc_cat <- tab23_factors(df_disc, "Social Category") -->
+<!-- table_kable(tableframe = tab22_soc_cat, caption = "Reasons for not willing to work") -->
+<!-- table_kable(tableframe = tab23_soc_cat, caption = "Reasons for quitting work") -->
+<!-- ``` -->
+
+<!-- \newpage -->
+<!-- # Reasons for discouragement across Education levels -->
+<!-- ```{r edu} -->
+<!-- tab22_edu <- tab22_factors(df_disc, "Education") -->
+<!-- tab23_edu <- tab23_factors(df_disc, "Education") -->
+<!-- table_kable(tableframe = tab22_edu, caption = "Reasons for not willing to work") -->
+<!-- table_kable(tableframe = tab23_edu, caption = "Reasons for quitting work") -->
+<!-- ``` -->
+
+<!-- \newpage -->
+<!-- # Reasons for discouragement across family type -->
+<!-- ```{r family} -->
+<!-- table(df_disc$family_type) -->
+<!-- tab22_fam_type <- tab22_factors(df_disc, "family_type") -->
+<!-- tab23_fam_type <- tab23_factors(df_disc, "family_type") -->
+<!-- table_kable(tableframe = tab22_fam_type, caption = "Reasons for not willing to work") -->
+<!-- table_kable(tableframe = tab23_fam_type, caption = "Reasons for quitting work") -->
+<!-- ``` -->
+
+
+
+<!-- ```{r quitting} -->
+<!-- tab23_reasons <- df_disc %>% -->
+<!--   select(starts_with("wp23_quit"), disc_worker) %>% -->
+<!--   select(-c(contains("_rank_"), contains("_other"))) %>% -->
+<!--   pivot_longer(cols = starts_with("wp23"), -->
+<!--                names_to = "Reasons", -->
+<!--                values_drop_na = T) %>% -->
+<!--   group_by(Reasons, disc_worker) %>% -->
+<!--   mutate( -->
+<!--     Total = sum(value) -->
+<!--   ) %>% -->
+<!--   group_by(Reasons, disc_worker) %>% -->
+<!--   summarise( -->
+<!--     Frequency = sum(value), -->
+<!--     Percentage = round(Frequency/first(Total)*100,2)) -->
+
+<!-- tab22_reasons <- df_disc %>% -->
+<!--   select(starts_with("wp22_work_not_willing"), disc_worker) %>% -->
+<!--   select(-c(contains("_rank_"), contains("_other"))) %>% -->
+<!--   pivot_longer(cols = starts_with("wp2"), -->
+<!--                names_to = "Reasons", -->
+<!--                values_drop_na = T) %>% -->
+<!--   group_by(Reasons, disc_worker) %>% -->
+<!--   mutate( -->
+<!--     Total = sum(value) -->
+<!--   ) %>% -->
+<!--   group_by(Reasons, disc_worker) %>% -->
+<!--   summarise( -->
+<!--     Frequency = sum(value), -->
+<!--     Percentage = round(Frequency/first(Total)*100,2)) -->
+
+
+<!-- ``` -->
+
